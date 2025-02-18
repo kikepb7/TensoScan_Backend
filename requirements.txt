@@ -1,0 +1,10 @@
+pydantic~=2.10.6
+fastapi~=0.115.8
+pip~=23.2.1
+uvicorn~=0.34.0
+firebase-admin~=6.6.0
+protobuf~=5.29.3
+cryptography~=44.0.1
+python-dotenv~=1.0.1
+tensorflow~=2.18.0
+pydantic-settings~=2.7.1
