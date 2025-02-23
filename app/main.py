@@ -1,13 +1,30 @@
 from fastapi import FastAPI
-from app.api.routes import predict
+from app.api.routes.predict import router as ocr_router
+import uvicorn
 
-app = FastAPI(title="TensorFlow", version="1.0.0")
+app = FastAPI(
+    title="Number Recognition API",
+    description="API para reconocimiento de números en imágenes"
+)
 
-# Routes
-app.include_router(predict.router, prefix="/api")
+app.include_router(ocr_router)
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to Number Recognition API",
+        "endpoints": {
+            "ocr_recognize": "/ocr/recognize",
+            "ocr_test": "/ocr/test",
+            "ocr_test_recognition": "/ocr/test-recognition"
+        }
+    }
 
 if __name__ == "__main__":
-    import uvicorn
-    from app.core.config import settings
-
-    uvicorn.run(app, host="0.0.0.0", port=settings.API_PORT)
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        workers=1
+    )
