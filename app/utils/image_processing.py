@@ -1,14 +1,35 @@
 # Libraries
 import cv2
 import numpy as np
-from skimage import filters, measure
 from PIL import Image
+from skimage import filters, measure
+
 
 class ImageProcessor:
     def __init__(self):
         """
         Initialize image processor
         """
+
+    @staticmethod
+    def show_resized_image(window_name: str, image: np.ndarray, max_size: int = 800):
+        """
+        Muestra una imagen redimensionada si es demasiado grande.
+        :param window_name: Nombre de la ventana.
+        :param image: Imagen en formato NumPy.
+        :param max_size: Tamaño máximo en píxeles del lado más grande.
+        """
+        h, w = image.shape[:2]
+
+        # Si la imagen es más grande que max_size, la redimensionamos
+        if max(h, w) > max_size:
+            scale = max_size / max(h, w)
+            new_size = (int(w * scale), int(h * scale))
+            image = cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
+
+        cv2.imshow(window_name, image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     def load_image(self, image_path: str) -> np.ndarray:
         """
@@ -21,6 +42,8 @@ class ImageProcessor:
 
             if image is None:
                 raise FileNotFoundError(f"Image not found in {image_path}")
+
+            # ImageProcessor.show_resized_image("Loaded Image", image)
             return image
         except Exception as e:
             raise ValueError(f"Error loading image: {e}")
@@ -37,9 +60,9 @@ class ImageProcessor:
         # Thresholding
         _, thresholded_image = cv2.threshold(image, threshold, 255, cv2.THRESH_BINARY)
 
-        # Normalize
-        normalized_image = thresholded_image.astype(np.float32) / 255.0
-
+        # Normaliza, pero convierte a uint8 antes de devolver la imagen
+        normalized_image = (thresholded_image.astype(np.float32) / 255.0 * 255).astype(np.uint8)
+        # Redimensionar la imagen si es muy grande
         return normalized_image
 
 
@@ -52,8 +75,8 @@ class ImageProcessor:
         """
         x1, y1, x2, y2 = coords
         display_area = image[y1:y2, x1:x2]
+        self.show_resized_image("Display Area", display_area)
         return display_area
-
 
     def detect_digit_positions(self, display_area: np.ndarray) -> list:
         """
@@ -61,21 +84,35 @@ class ImageProcessor:
         :param display_area: image of the display area
         :return: list of coordinates of the detected digits
         """
-        # Detect contours
-        contours, _ = cv2.findContours(display_area, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Verificar si la imagen tiene 3 canales (BGR)
+        if len(display_area.shape) == 3:
+            # Convertir a escala de grises si tiene 3 canales
+            gray = cv2.cvtColor(display_area, cv2.COLOR_BGR2GRAY)
+        else:
+            # Si ya está en escala de grises, no hacer nada
+            gray = display_area
+
+        # El resto del código sigue igual
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        _, thresh = cv2.threshold(blurred, 150, 255, cv2.THRESH_BINARY_INV)
+
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+        x, y, w, h = cv2.boundingRect(contours[0])
+        screen_roi = display_area[y:y + h, x:x + w]
 
         digit_positions = []
         for contour in contours:
-            # Ignore small contours that are not digits
             if cv2.contourArea(contour) > 100:
                 x, y, w, h = cv2.boundingRect(contour)
                 digit_positions.append((x, y, w, h))
 
-        # Sort positions
         digit_positions.sort(key=lambda pos: pos[0])
 
-        return digit_positions
+        self.show_resized_image("Contour", screen_roi)
 
+        return digit_positions
 
     def crop_digit(self, display_area: np.ndarray, digit_position: tuple) -> np.ndarray:
         """
@@ -115,5 +152,3 @@ class ImageProcessor:
         :return:  cleaned
         """
         return cv2.medianBlur(image, 3)
-
-
