@@ -7,8 +7,7 @@ class ImageProcessor:
         """
         Initialize image processor
         """
-    @staticmethod
-    def show_resized_image(window_name: str, image: np.ndarray, max_size: int = 800):
+    def show_resized_image(self, window_name: str, image: np.ndarray, max_size: int = 800):
         """
         Muestra una imagen redimensionada si es demasiado grande.
         """
@@ -81,8 +80,6 @@ class ImageProcessor:
             aspect_ratio = w / float(h)  # Relación de aspecto
 
             # Filtrar contornos:
-            # - Relación de aspecto más cercana a 1 para los números
-            # - Área mínima mayor para evitar que se detecten letras pequeñas
             if 0.8 < aspect_ratio < 1.2 and cv2.contourArea(c) > 500:  # Ajuste en relación y área
                 digit_positions.append((x, y, w, h))
 
@@ -118,5 +115,7 @@ class ImageProcessor:
         Aplica filtro de eliminación de ruido
         """
         denoised_image = cv2.medianBlur(image, 3)
-        self.show_resized_image("Denoised Image", denoised_image)  # Mostrar imagen denoised
+        self.show_resized_image("Denoised Image", denoised_image)
         return denoised_image
+
+

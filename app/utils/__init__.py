@@ -1,13 +1,12 @@
 from app.utils.image_processing import ImageProcessor
-import cv2
-import numpy as np
 import matplotlib.pyplot as plt
+import cv2
 
 # Creamos una instancia de la clase
 processor = ImageProcessor()
 
 # Llamamos a los métodos pasando sus argumentos
-image = processor.load_image("C:/Users/garci/OneDrive/Documentos/_IABD/_proyectos/tensoscan/TensoScan_Images/tensiometro.jpg")
+image = processor.load_image(r"C:/Users/garci/OneDrive/Documentos/_IABD/_proyectos/tensoscan/TensoScan_Images/tensiometro.jpg")
 
 # Mejoramos el preprocesamiento aumentando contraste y aplicando un filtro adaptativo
 def enhance_contrast(image):
