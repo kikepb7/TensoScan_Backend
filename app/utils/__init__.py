@@ -6,7 +6,7 @@ import cv2
 processor = ImageProcessor()
 
 # Llamamos a los métodos pasando sus argumentos
-image = processor.load_image(r"C:/Users/garci/OneDrive/Documentos/_IABD/_proyectos/tensoscan/TensoScan_Images/tensiometro.jpg")
+image = processor.load_image(r"C:/Users/garci/OneDrive/Documentos/_IABD/_proyectos/tensoscan/TensoScan_Images/tensiometro.jpeg")
 
 # Mejoramos el preprocesamiento aumentando contraste y aplicando un filtro adaptativo
 def enhance_contrast(image):
@@ -18,8 +18,10 @@ image = enhance_contrast(image)
 processed_image = processor.process_image(image)  # Procesar imagen
 
 display_area = processor.extract_display_area(image, (10, 10, 2875, 4100))  # Extraer zona de interés
+print(display_area.shape)
 
 digit_positions = processor.detect_digit_positions(display_area)  # Detectar posiciones de los dígitos
+print(digit_positions)
 
 # Recortar y procesar cada dígito
 digits = []

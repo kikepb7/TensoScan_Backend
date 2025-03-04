@@ -3,10 +3,7 @@ import numpy as np
 from PIL import Image
 
 class ImageProcessor:
-    def __init__(self):
-        """
-        Initialize image processor
-        """
+
     def show_resized_image(self, window_name: str, image: np.ndarray, max_size: int = 800):
         """
         Muestra una imagen redimensionada si es demasiado grande.
@@ -92,6 +89,7 @@ class ImageProcessor:
         """
         x, y, w, h = digit_position
         cropped_digit = display_area[y:y+h, x:x+w]
+        print(f"Dimensiones del dígito recortado: {cropped_digit.shape}")
         self.show_resized_image("Cropped Digit", cropped_digit)  # Mostrar dígito recortado
         return cropped_digit
 
