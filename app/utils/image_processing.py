@@ -18,7 +18,6 @@ class ImageProcessor:
         """
         try:
             image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-
             if image is None:
                 raise FileNotFoundError(f"Image not found in {image_path}")
             return image
@@ -42,18 +41,63 @@ class ImageProcessor:
 
         return normalized_image
 
-
-    def extract_display_area(self, image: np.ndarray, coords: tuple) -> np.ndarray:
+    def extract_display_area(self,image: np.ndarray) -> np.ndarray:
         """
-        Extract display zone using coordinates (ROI)
-        :param image: input image
-        :param coords: coordinates that define the display area
-        :return: image cropped to the display
+        Detecta automáticamente el área del display de un tensiómetro en una imagen y la recorta.
+        :param image: Imagen de entrada.
+        :return: Región de la imagen recortada correspondiente al display. Devuelve None si no se detecta.
         """
-        x1, y1, x2, y2 = coords
-        display_area = image[y1:y2, x1:x2]
-        return display_area
+        # Convertir la imagen a escala de grises
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray = cv2.equalizeHist(gray)
 
+        # Aplicar desenfoque para suavizar la imagen
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+        # Aplicar un umbral binario o adaptativo para resaltar los contornos
+        #_, thresh = cv2.threshold(blurred, 50, 255, cv2.THRESH_BINARY_INV)
+
+        # También puedes probar con umbral adaptativo:
+        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+
+        # Asegurarse de que thresh sea del tipo CV_8UC1
+        #thresh = np.uint8(thresh)
+
+        # Buscar contornos en la imagen binarizada
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Inicializar el área del display
+        display_contour = None
+        max_area = 0
+
+        # Encontrar el contorno más grande que probablemente sea el display
+        for contour in contours:
+            # Calcular el área del contorno
+            area = cv2.contourArea(contour)
+
+            # Filtrar contornos pequeños que no sean el display
+            if area > 1000:  # Ajusta este valor dependiendo del tamaño esperado del display
+                # Aproximar el contorno a un cuadrilátero
+                peri = cv2.arcLength(contour, True)
+                approx = cv2.approxPolyDP(contour, 0.02 * peri, True)
+
+                # Si es un contorno rectangular (cuatro vértices), tomarlo
+                if len(approx) == 4 and area > max_area:
+                    display_contour = approx
+                    max_area = area
+
+        # Si se encuentra el contorno del display, recortar la región
+        if display_contour is not None:
+            # Obtener un bounding box alrededor del contorno
+            x, y, w, h = cv2.boundingRect(display_contour)
+
+            # Recortar el área del display de la imagen original
+            display_area = image[y:y + h, x:x + w]
+            return display_area
+
+        # Si no se detecta un área de display, devolver None
+        print("No se pudo detectar el área del display.")
+        return None
 
     def detect_digit_positions(self, display_area: np.ndarray) -> list:
         """
@@ -96,6 +140,9 @@ class ImageProcessor:
         :param target_size: target size, default (28, 28)
         :return: resized image
         """
+        image = cv2.resize(image, (300,300))
+        cv2.imshow("image", image)
+        cv2.waitKey(0)
         return cv2.resize(image, target_size)
 
 
