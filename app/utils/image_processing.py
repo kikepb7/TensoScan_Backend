@@ -120,6 +120,43 @@ class ImageProcessor:
 
         return digit_positions
 
+    def crop_digit_areas(self, display: np.ndarray) -> list:
+        """
+        Crops and saves images at the specified coordinates.
+
+        :param display: Input image in numpy array format.
+        :return: List with the coordinates of the saved crops.
+        """
+
+        # Crop coordinates (x1: left, x2: top, y1: right, y2: bottom)
+        coordinates = [
+            (140, 160, 440, 620),   # Region 1
+            (450, 160, 750, 620),   # Region 2
+            (760, 160, 1060, 620),  # Region 3
+            (450, 640, 750, 1100),  # Region 4
+            (760, 640, 1060, 1100), # Region 5
+            (740, 1150, 900, 1400), # Region 6
+            (920, 1150, 1080, 1400) # Region 7
+        ]
+
+        # Iterate over the coordinates
+        cropped_images = []
+
+        # Crop the image region
+        for idx, (x1, x2, y1, y2) in enumerate(coordinates):
+            # Recortar la región de la imagen
+            cropped_img = display[x2:y2, x1:y1]
+
+            # Save the cropped image to a file
+            file_name = f"digit_region_{idx}.png"
+            cv2.imwrite(file_name, cropped_img)
+            print(f"Imagen guardada: {file_name}")
+            print(cropped_img.shape)
+            # Store the cropped image in the list (optional)
+            cropped_images.append(cropped_img)
+
+        # Return the used coordinates (if necessary)
+        return coordinates
 
     def crop_digit(self, display_area: np.ndarray, digit_position: tuple) -> np.ndarray:
         """
@@ -131,7 +168,6 @@ class ImageProcessor:
         x, y, w, h = digit_position
         digit_image = display_area[y:y+h, x:x+w]
         return digit_image
-
 
     def resize_image(self, image: np.ndarray, target_size: tuple = (28, 28)) -> np.ndarray:
         """
