@@ -44,7 +44,7 @@ class ImageProcessor:
         Aplica umbralización adaptativa y normalización a la imagen
         """
         image = self.enhance_contrast(image)
-        # Probar umbralización fija
+
         _, adaptive_thresh = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY_INV)  # Umbral fijo
         self.show_resized_image("Processed Image", adaptive_thresh)  # Mostrar imagen procesada
         return adaptive_thresh
@@ -90,7 +90,6 @@ class ImageProcessor:
         x, y, w, h = digit_position
         cropped_digit = display_area[y:y+h, x:x+w]
         print(f"Dimensiones del dígito recortado: {cropped_digit.shape}")
-        self.show_resized_image("Cropped Digit", cropped_digit)  # Mostrar dígito recortado
         return cropped_digit
 
     def resize_image(self, image: np.ndarray, target_size: tuple = (28, 28)) -> np.ndarray:
@@ -98,7 +97,6 @@ class ImageProcessor:
         Redimensiona una imagen al tamaño deseado
         """
         resized_image = cv2.resize(image, target_size)
-        self.show_resized_image("Resized Image", resized_image)  # Mostrar imagen redimensionada
         return resized_image
 
     def convert_image_to_pil(self, image: np.ndarray) -> Image:
@@ -113,7 +111,6 @@ class ImageProcessor:
         Aplica filtro de eliminación de ruido
         """
         denoised_image = cv2.medianBlur(image, 3)
-        self.show_resized_image("Denoised Image", denoised_image)
         return denoised_image
 
 
