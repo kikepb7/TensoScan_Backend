@@ -1,8 +1,7 @@
-# Libraries
 import cv2
 import numpy as np
-from skimage import filters, measure
 from PIL import Image
+from skimage import filters, measure
 
 class ImageProcessor:
     def __init__(self):
@@ -41,27 +40,25 @@ class ImageProcessor:
 
         return normalized_image
 
-    def extract_display_area(self,image: np.ndarray) -> np.ndarray:
+    def extract_display_area(self, image: np.ndarray) -> np.ndarray:
         """
         Detecta automáticamente el área del display de un tensiómetro en una imagen y la recorta.
         :param image: Imagen de entrada.
         :return: Región de la imagen recortada correspondiente al display. Devuelve None si no se detecta.
         """
-        # Convertir la imagen a escala de grises
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # Verifica si la imagen ya está en escala de grises
+        if len(image.shape) == 3:  # Tiene más de un canal (es a color)
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image  # Ya es escala de grises
+
         gray = cv2.equalizeHist(gray)
 
         # Aplicar desenfoque para suavizar la imagen
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
-        # Aplicar un umbral binario o adaptativo para resaltar los contornos
-        #_, thresh = cv2.threshold(blurred, 50, 255, cv2.THRESH_BINARY_INV)
-
-        # También puedes probar con umbral adaptativo:
+        # Aplicar umbral adaptativo para resaltar los contornos
         thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-
-        # Asegurarse de que thresh sea del tipo CV_8UC1
-        #thresh = np.uint8(thresh)
 
         # Buscar contornos en la imagen binarizada
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -72,66 +69,61 @@ class ImageProcessor:
 
         # Encontrar el contorno más grande que probablemente sea el display
         for contour in contours:
-            # Calcular el área del contorno
             area = cv2.contourArea(contour)
-
-            # Filtrar contornos pequeños que no sean el display
-            if area > 1000:  # Ajusta este valor dependiendo del tamaño esperado del display
-                # Aproximar el contorno a un cuadrilátero
+            if area > 1000:  # Ajusta este valor según el tamaño esperado del display
                 peri = cv2.arcLength(contour, True)
                 approx = cv2.approxPolyDP(contour, 0.02 * peri, True)
-
-                # Si es un contorno rectangular (cuatro vértices), tomarlo
                 if len(approx) == 4 and area > max_area:
                     display_contour = approx
                     max_area = area
 
         # Si se encuentra el contorno del display, recortar la región
         if display_contour is not None:
-            # Obtener un bounding box alrededor del contorno
             x, y, w, h = cv2.boundingRect(display_contour)
-
-            # Recortar el área del display de la imagen original
             display_area = image[y:y + h, x:x + w]
             return display_area
 
-        # Si no se detecta un área de display, devolver None
         print("No se pudo detectar el área del display.")
         return None
 
-    def detect_digit_positions(self, display_area: np.ndarray) -> list:
+    def enclose_digits_with_coordinates(self, image: np.ndarray, digit_coordinates: list) -> np.ndarray:
         """
-        Detects the positions of digits within the display using outlines or segmentation
-        :param display_area: image of the display area
-        :return: list of coordinates of the detected digits
+        Dibuja rectángulos alrededor de los dígitos utilizando las coordenadas proporcionadas.
+        :param image: Imagen de entrada
+        :param digit_coordinates: Lista de coordenadas de los dígitos en formato (x, y, w, h)
+        :return: Imagen con los dígitos enmarcados
         """
-        # Detect contours
-        contours, _ = cv2.findContours(display_area, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Crear una copia de la imagen para no modificar la original
+        image_with_rectangles = image.copy()
 
-        digit_positions = []
-        for contour in contours:
-            # Ignore small contours that are not digits
-            if cv2.contourArea(contour) > 100:
-                x, y, w, h = cv2.boundingRect(contour)
-                digit_positions.append((x, y, w, h))
+        # Iterar sobre las coordenadas de los dígitos
+        for (x, y, w, h) in digit_coordinates:
+            # Dibujar un rectángulo alrededor de cada dígito detectado
+            cv2.rectangle(image_with_rectangles, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-        # Sort positions
-        digit_positions.sort(key=lambda pos: pos[0])
+        return image_with_rectangles
 
-        return digit_positions
-
-
-    def crop_digit(self, display_area: np.ndarray, digit_position: tuple) -> np.ndarray:
+    def detect_and_enclose_digits(self, image: np.ndarray) -> np.ndarray:
         """
-        Crops a specific digit from the display area using the coordinates of the digit
-        :param display_area: image of the display area
-        :param digit_position: coordinates of the digit to crop
-        :return: cropped image of the digit
+        Detecta los dígitos en la imagen y los enmarca usando coordenadas predefinidas.
+        :param image: Imagen de entrada
+        :return: Imagen con los dígitos enmarcados
         """
-        x, y, w, h = digit_position
-        digit_image = display_area[y:y+h, x:x+w]
-        return digit_image
+        # Ejemplo de coordenadas para los 7 dígitos a enmarcar
+        digit_coordinates = [
+            (80, 50, 135, 155),  # Coordenadas del primer dígito (x, y, w, h)
+            (215, 50, 135, 155),  # Segundo dígito
+            (355, 50, 135, 155),  # Tercer dígito
+            (215, 210, 135, 155),  # Segundo dígito
+            (355, 210, 135, 155),  # Quinto dígito
+            (360, 382, 75, 90),  # Sexto dígito
+            (435, 382, 75, 90)  # Séptimo dígito
+        ]
 
+        # Enmarcar los dígitos usando las coordenadas proporcionadas
+        image_with_digits = self.enclose_digits_with_coordinates(image, digit_coordinates)
+
+        return image_with_digits
 
     def resize_image(self, image: np.ndarray, target_size: tuple = (28, 28)) -> np.ndarray:
         """
