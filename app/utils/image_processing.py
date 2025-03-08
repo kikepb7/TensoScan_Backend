@@ -1,116 +1,166 @@
+# Libraries
 import cv2
 import numpy as np
+from skimage import filters, measure
 from PIL import Image
 
 class ImageProcessor:
-
-    def show_resized_image(self, window_name: str, image: np.ndarray, max_size: int = 800):
+    def __init__(self):
         """
-        Muestra una imagen redimensionada si es demasiado grande.
+        Initialize image processor
         """
-        h, w = image.shape[:2]
-        if max(h, w) > max_size:
-            scale = max_size / max(h, w)
-            new_size = (int(w * scale), int(h * scale))
-            image = cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
-        cv2.imshow(window_name, image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
 
     def load_image(self, image_path: str) -> np.ndarray:
         """
         Load an image from disk and convert it to an array
+        :param image_path: image path
+        :return: image loaded and converted in a NumPy array format
         """
         try:
             image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
             if image is None:
                 raise FileNotFoundError(f"Image not found in {image_path}")
-            self.show_resized_image("Loaded Image", image)  # Mostrar imagen cargada
             return image
         except Exception as e:
             raise ValueError(f"Error loading image: {e}")
 
-    def enhance_contrast(self, image: np.ndarray) -> np.ndarray:
-        """
-        Aumenta el contraste de la imagen con CLAHE
-        """
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-        enhanced_image = clahe.apply(image)
-        self.show_resized_image("Enhanced Contrast", enhanced_image)  # Mostrar imagen con contraste mejorado
-        return enhanced_image
 
-    def process_image(self, image: np.ndarray) -> np.ndarray:
+    def process_image(self, image: np.ndarray, threshold: int = 127) -> np.ndarray:
         """
-        Aplica umbralización adaptativa y normalización a la imagen
+        Process image, convert to grayscale, apply thresholding and normalization
+        :param image: input image
+        :param threshold: threshold value for binarization
+        :return: preprocessed image
         """
-        image = self.enhance_contrast(image)
 
-        _, adaptive_thresh = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY_INV)  # Umbral fijo
-        self.show_resized_image("Processed Image", adaptive_thresh)  # Mostrar imagen procesada
-        return adaptive_thresh
+        # Thresholding
+        _, thresholded_image = cv2.threshold(image, threshold, 255, cv2.THRESH_BINARY)
 
-    def extract_display_area(self, image: np.ndarray, coords: tuple) -> np.ndarray:
+        # Normalize
+        normalized_image = thresholded_image.astype(np.float32) / 255.0
+
+        return normalized_image
+
+    def extract_display_area(self,image: np.ndarray) -> np.ndarray:
         """
-        Extrae el área de visualización según las coordenadas proporcionadas
+        Detecta automáticamente el área del display de un tensiómetro en una imagen y la recorta.
+        :param image: Imagen de entrada.
+        :return: Región de la imagen recortada correspondiente al display. Devuelve None si no se detecta.
         """
-        x1, y1, x2, y2 = coords
-        display_area = image[y1:y2, x1:x2]
-        self.show_resized_image("Extracted Display Area", display_area)  # Mostrar área extraída
-        return display_area
+        # Convertir la imagen a escala de grises
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray = cv2.equalizeHist(gray)
+
+        # Aplicar desenfoque para suavizar la imagen
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+        # Aplicar un umbral binario o adaptativo para resaltar los contornos
+        #_, thresh = cv2.threshold(blurred, 50, 255, cv2.THRESH_BINARY_INV)
+
+        # También puedes probar con umbral adaptativo:
+        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+
+        # Asegurarse de que thresh sea del tipo CV_8UC1
+        #thresh = np.uint8(thresh)
+
+        # Buscar contornos en la imagen binarizada
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Inicializar el área del display
+        display_contour = None
+        max_area = 0
+
+        # Encontrar el contorno más grande que probablemente sea el display
+        for contour in contours:
+            # Calcular el área del contorno
+            area = cv2.contourArea(contour)
+
+            # Filtrar contornos pequeños que no sean el display
+            if area > 1000:  # Ajusta este valor dependiendo del tamaño esperado del display
+                # Aproximar el contorno a un cuadrilátero
+                peri = cv2.arcLength(contour, True)
+                approx = cv2.approxPolyDP(contour, 0.02 * peri, True)
+
+                # Si es un contorno rectangular (cuatro vértices), tomarlo
+                if len(approx) == 4 and area > max_area:
+                    display_contour = approx
+                    max_area = area
+
+        # Si se encuentra el contorno del display, recortar la región
+        if display_contour is not None:
+            # Obtener un bounding box alrededor del contorno
+            x, y, w, h = cv2.boundingRect(display_contour)
+
+            # Recortar el área del display de la imagen original
+            display_area = image[y:y + h, x:x + w]
+            return display_area
+
+        # Si no se detecta un área de display, devolver None
+        print("No se pudo detectar el área del display.")
+        return None
 
     def detect_digit_positions(self, display_area: np.ndarray) -> list:
         """
-        Detecta los contornos de los dígitos en la imagen, filtrando por tamaño y forma
+        Detects the positions of digits within the display using outlines or segmentation
+        :param display_area: image of the display area
+        :return: list of coordinates of the detected digits
         """
-        # Aplica desenfoque gaussiano para reducir ruido
-        blurred = cv2.GaussianBlur(display_area, (5, 5), 0)
-        # Umbralización binaria inversa para resaltar los números
-        _, thresh = cv2.threshold(blurred, 150, 255, cv2.THRESH_BINARY_INV)
+        # Detect contours
+        contours, _ = cv2.findContours(display_area, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # Encuentra los contornos de los objetos en la imagen
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         digit_positions = []
-
-        for c in contours:
-            # Obtiene el rectángulo delimitador para cada contorno
-            x, y, w, h = cv2.boundingRect(c)
-            aspect_ratio = w / float(h)  # Relación de aspecto
-
-            # Filtrar contornos:
-            if 0.8 < aspect_ratio < 1.2 and cv2.contourArea(c) > 500:  # Ajuste en relación y área
+        for contour in contours:
+            # Ignore small contours that are not digits
+            if cv2.contourArea(contour) > 100:
+                x, y, w, h = cv2.boundingRect(contour)
                 digit_positions.append((x, y, w, h))
 
-        # Ordenar los dígitos por la coordenada X (de izquierda a derecha)
-        return sorted(digit_positions, key=lambda pos: pos[0])
+        # Sort positions
+        digit_positions.sort(key=lambda pos: pos[0])
+
+        return digit_positions
+
 
     def crop_digit(self, display_area: np.ndarray, digit_position: tuple) -> np.ndarray:
         """
-        Recorta un dígito en base a sus coordenadas
+        Crops a specific digit from the display area using the coordinates of the digit
+        :param display_area: image of the display area
+        :param digit_position: coordinates of the digit to crop
+        :return: cropped image of the digit
         """
         x, y, w, h = digit_position
-        cropped_digit = display_area[y:y+h, x:x+w]
-        print(f"Dimensiones del dígito recortado: {cropped_digit.shape}")
-        return cropped_digit
+        digit_image = display_area[y:y+h, x:x+w]
+        return digit_image
+
 
     def resize_image(self, image: np.ndarray, target_size: tuple = (28, 28)) -> np.ndarray:
         """
-        Redimensiona una imagen al tamaño deseado
+        Resize an image to a specific size
+        :param image: input image
+        :param target_size: target size, default (28, 28)
+        :return: resized image
         """
-        resized_image = cv2.resize(image, target_size)
-        return resized_image
+        image = cv2.resize(image, (300,300))
+        cv2.imshow("image", image)
+        cv2.waitKey(0)
+        return cv2.resize(image, target_size)
+
 
     def convert_image_to_pil(self, image: np.ndarray) -> Image:
         """
-        Convierte una imagen de NumPy a formato PIL
+        Convert numpy image into PIL format
+        :param image: image in NumPy format
+        :return: image in PIL image
         """
-        pil_image = Image.fromarray(image)
-        return pil_image
+        return Image.fromarray(image)
+
 
     def denoise_image(self, image: np.ndarray) -> np.ndarray:
         """
-        Aplica filtro de eliminación de ruido
+        Remove noise from image
+        :param image: input image
+        :return:  cleaned
         """
-        denoised_image = cv2.medianBlur(image, 3)
-        return denoised_image
+        return cv2.medianBlur(image, 3)
 
 
