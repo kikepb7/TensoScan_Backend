@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from PIL import Image
-from skimage import filters, measure
+import os
 
 class ImageProcessor:
     def __init__(self):
@@ -42,42 +42,42 @@ class ImageProcessor:
 
     def extract_display_area(self, image: np.ndarray) -> np.ndarray:
         """
-        Detecta automáticamente el área del display de un tensiómetro en una imagen y la recorta.
-        :param image: Imagen de entrada.
-        :return: Región de la imagen recortada correspondiente al display. Devuelve None si no se detecta.
+        Detects the display area of a tensiometer in an image and crops it.
+        :param image: input image
+        :return: Cropped region corresponding to the display area. Returns None if no display area is detected.
         """
-        # Verifica si la imagen ya está en escala de grises
-        if len(image.shape) == 3:  # Tiene más de un canal (es a color)
+        # Check if the image is already in grayscale
+        if len(image.shape) == 3:  # Has more than one channel (color image)
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         else:
-            gray = image  # Ya es escala de grises
+            gray = image  # It's already in grayscale
 
         gray = cv2.equalizeHist(gray)
 
-        # Aplicar desenfoque para suavizar la imagen
+        # Apply blur to smooth the image
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
-        # Aplicar umbral adaptativo para resaltar los contornos
+        # Apply adaptive thresholding to highlight contours
         thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 
-        # Buscar contornos en la imagen binarizada
+        # Find contours in the thresholded image
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # Inicializar el área del display
+        # Initialize the display area
         display_contour = None
         max_area = 0
 
-        # Encontrar el contorno más grande que probablemente sea el display
+        # Find the largest contour which is likely the display
         for contour in contours:
             area = cv2.contourArea(contour)
-            if area > 1000:  # Ajusta este valor según el tamaño esperado del display
+            if area > 1000:  # Adjust this value based on the expected display size
                 peri = cv2.arcLength(contour, True)
                 approx = cv2.approxPolyDP(contour, 0.02 * peri, True)
                 if len(approx) == 4 and area > max_area:
                     display_contour = approx
                     max_area = area
 
-        # Si se encuentra el contorno del display, recortar la región
+        # If the display contour is found, crop the region
         if display_contour is not None:
             x, y, w, h = cv2.boundingRect(display_contour)
             display_area = image[y:y + h, x:x + w]
@@ -88,39 +88,39 @@ class ImageProcessor:
 
     def enclose_digits_with_coordinates(self, image: np.ndarray, digit_coordinates: list) -> np.ndarray:
         """
-        Dibuja rectángulos alrededor de los dígitos utilizando las coordenadas proporcionadas.
-        :param image: Imagen de entrada
-        :param digit_coordinates: Lista de coordenadas de los dígitos en formato (x, y, w, h)
-        :return: Imagen con los dígitos enmarcados
+        Draw rectangles around digits using provided coordinates.
+        :param image: input image
+        :param digit_coordinates: list of digit coordinates in (x, y, w, h) format
+        :return: image with rectangles around digits
         """
-        # Crear una copia de la imagen para no modificar la original
+        # Create a copy of the image to avoid modifying the original
         image_with_rectangles = image.copy()
 
-        # Iterar sobre las coordenadas de los dígitos
+        # Iterate over digit coordinates and draw rectangles
         for (x, y, w, h) in digit_coordinates:
-            # Dibujar un rectángulo alrededor de cada dígito detectado
+            # Draw a rectangle around each detected digit
             cv2.rectangle(image_with_rectangles, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
         return image_with_rectangles
 
     def detect_and_enclose_digits(self, image: np.ndarray) -> np.ndarray:
         """
-        Detecta los dígitos en la imagen y los enmarca usando coordenadas predefinidas.
-        :param image: Imagen de entrada
-        :return: Imagen con los dígitos enmarcados
+        Detects digits in the image and draws rectangles around them using predefined coordinates.
+        :param image: input image
+        :return: image with digits enclosed in rectangles
         """
-        # Ejemplo de coordenadas para los 7 dígitos a enmarcar
+        # Example coordinates for 7 digits to be enclosed
         digit_coordinates = [
-            (80, 50, 135, 155),  # Coordenadas del primer dígito (x, y, w, h)
-            (215, 50, 135, 155),  # Segundo dígito
-            (355, 50, 135, 155),  # Tercer dígito
-            (215, 210, 135, 155),  # Segundo dígito
-            (355, 210, 135, 155),  # Quinto dígito
-            (360, 382, 75, 90),  # Sexto dígito
-            (435, 382, 75, 90)  # Séptimo dígito
+            (80, 50, 135, 155),  # First digit
+            (215, 50, 135, 155),  # Second digit
+            (355, 50, 135, 155),  # Third digit
+            (215, 210, 135, 155),  # Fourth digit
+            (355, 210, 135, 155),  # Fifth digit
+            (360, 382, 75, 90),  # Sixth digit
+            (435, 382, 75, 90)  # Seventh digit
         ]
 
-        # Enmarcar los dígitos usando las coordenadas proporcionadas
+        # Enclose the digits using the provided coordinates
         image_with_digits = self.enclose_digits_with_coordinates(image, digit_coordinates)
 
         return image_with_digits
@@ -132,27 +132,61 @@ class ImageProcessor:
         :param target_size: target size, default (28, 28)
         :return: resized image
         """
-        image = cv2.resize(image, (300,300))
-        cv2.imshow("image", image)
-        cv2.waitKey(0)
         return cv2.resize(image, target_size)
-
 
     def convert_image_to_pil(self, image: np.ndarray) -> Image:
         """
-        Convert numpy image into PIL format
+        Convert NumPy image to PIL format
         :param image: image in NumPy format
-        :return: image in PIL image
+        :return: image in PIL format
         """
         return Image.fromarray(image)
-
 
     def denoise_image(self, image: np.ndarray) -> np.ndarray:
         """
         Remove noise from image
         :param image: input image
-        :return:  cleaned
+        :return: cleaned image
         """
         return cv2.medianBlur(image, 3)
 
+    def crop_and_save_digits(self, image: np.ndarray, digit_coordinates: list, output_path: str):
+        """
+        Crop each digit from the image and save them as individual files,
+        ensuring that the numbering continues from the highest existing number.
+        :param image: input image
+        :param digit_coordinates: list of coordinates for each digit
+        :param output_path: directory where the cropped digit images will be saved
+        """
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
 
+        # Find the highest existing digit number to continue the numbering
+        existing_files = os.listdir(output_path)
+        existing_numbers = []
+        for file in existing_files:
+            if file.startswith("digit_") and file.endswith(".png"):
+                try:
+                    # Extract the number from the filename (digit_1.png => 1)
+                    number = int(file.split('_')[1].split('.')[0])
+                    existing_numbers.append(number)
+                except ValueError:
+                    continue
+
+        # Determine the next available digit number (continue the numbering)
+        next_digit_number = max(existing_numbers, default=0) + 1
+
+        # Iterate over the coordinates and crop each digit
+        for i, (x, y, w, h) in enumerate(digit_coordinates):
+            # Crop the digit from the image
+            digit_image = image[y:y + h, x:x + w]
+
+            # Generate a unique file name for each digit
+            output_filename = os.path.join(output_path, f"digit_{next_digit_number}.png")
+
+            # Save the cropped digit image
+            cv2.imwrite(output_filename, digit_image)
+            print(f"Digit {next_digit_number} saved as {output_filename}")
+
+            # Increment the digit number for the next iteration
+            next_digit_number += 1
