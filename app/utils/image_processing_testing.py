@@ -1,7 +1,7 @@
-import cv2
-import pytesseract
 from PIL import Image
 import numpy as np
+import pytesseract
+import cv2
 import os
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -57,8 +57,7 @@ class ImageProcessor:
         pil_image = Image.fromarray(image)
 
         # Apply Tesseract OCR with configuration to only detect numbers
-        detected_text = pytesseract.image_to_string(pil_image, config='--psm 6 -c tessedit_char_whitelist=0123456789')
-
+        detected_text = pytesseract.image_to_string(pil_image, config='--psm 6 --oem 1 -c tessedit_char_whitelist=0123456789')
         # Clean up the text by stripping unwanted characters and spaces
         return detected_text.strip()
 
@@ -191,7 +190,6 @@ def main():
 
     # Show the recognized digits
     print("Dígitos reconocidos:", recognized_digits)
-
 
 if __name__ == "__main__":
     main()

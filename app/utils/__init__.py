@@ -1,4 +1,3 @@
-import os
 import cv2
 from image_processing import ImageProcessor
 
