@@ -57,7 +57,7 @@ class ImageProcessor:
         pil_image = Image.fromarray(image)
 
         # Apply Tesseract OCR with configuration to only detect numbers
-        detected_text = pytesseract.image_to_string(pil_image, config='--psm 6 --oem 1 -c tessedit_char_whitelist=0123456789')
+        detected_text = pytesseract.image_to_string(pil_image, config='--psm 13 --oem 1 -c tessedit_char_whitelist=0123456789')
         # Clean up the text by stripping unwanted characters and spaces
         return detected_text.strip()
 

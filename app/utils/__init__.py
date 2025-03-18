@@ -2,10 +2,14 @@ import cv2
 from image_processing import ImageProcessor
 
 def main():
-    ruta_imagen = r"C:\Users\garci\OneDrive\Documentos\_IABD\_proyectos\tensoscan\TensoScan_Images\tensiometro.jpg"
-    ruta_salida = r"C:\Users\garci\OneDrive\Documentos\_IABD\_proyectos\tensoscan\TensoScan_Images\output"
+    ruta_imagen = r"C:\Users\garci\OneDrive\Documentos\_IABD\_proyectos\tensoscan\TensoScan_Images\048.jpg"
+    ruta_salida = r"C:\Users\garci\OneDrive\Documentos\_IABD\_proyectos\tensoscan\TensoScan_Images\images_output"
+    coords = (1250, 1700, 1000, 1250)  # (x, y, ancho, alto)
 
     processor = ImageProcessor()
+
+    cropped_image_path = processor.extract_display_area_coords(ruta_imagen, coords, ruta_salida)
+    print("Imagen recortada guardada en:", cropped_image_path)
 
     # Cargar imagen
     imagen = processor.load_image(ruta_imagen)
@@ -29,13 +33,13 @@ def main():
 
     # Recortar y guardar cada dígito
     digit_coordinates = [
-        (80, 50, 135, 155),  # Primer dígito
-        (215, 50, 135, 155),  # Segundo dígito
-        (355, 50, 135, 155),  # Tercer dígito
-        (215, 210, 135, 155),  # Cuarto dígito
-        (355, 210, 135, 155),  # Quinto dígito
-        (360, 382, 75, 90),  # Sexto dígito
-        (435, 382, 75, 90)  # Séptimo dígito
+        (73, 45, 69, 71),  # First digit
+        (139, 45, 69, 71),  # Second digit
+        (205, 45, 69, 71),  # Third digit
+        (139, 119, 69, 71),  # Second digit
+        (205, 119, 69, 71),  # Fifth digit
+        (206, 198, 33, 47),  # Second digit
+        (249, 198, 33, 47)  # Seventh digit
     ]
 
     processor.crop_and_save_digits(display_area, digit_coordinates, ruta_salida)

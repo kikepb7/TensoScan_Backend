@@ -40,6 +40,58 @@ class ImageProcessor:
 
         return normalized_image
 
+    def extract_display_area_coords(self, ruta_imagen: str, coords: tuple, ruta_salida: str) -> str:
+        """
+        Crops a specific area of an image and saves it in an output folder.
+        :param ruta_imagen: Path to the input image
+        :param coords: Tuple with coordinates (x, y, w, h) of the area to crop
+        :param ruta_salida: Folder where the cropped image will be saved
+        :return: Path to the saved cropped image
+        """
+        # Cargar la imagen original
+        image = cv2.imread(ruta_imagen)
+        if image is None:
+            raise ValueError("No se pudo cargar la imagen.")
+
+        # Obtener el tamaño original de la imagen
+        original_height, original_width = image.shape[:2]
+
+        # Redimensionar la imagen a 800x800 para mejor visualización
+        image_resized = cv2.resize(image, (800, 800))
+
+        # Ajustar las coordenadas del área de recorte a la nueva escala (800x800)
+        scale_x = 800 / original_width
+        scale_y = 800 / original_height
+
+        x, y, w, h = coords
+
+        # Redimensionar las coordenadas del área de recorte a la nueva escala
+        x_resized = int(x * scale_x)
+        y_resized = int(y * scale_y)
+        w_resized = int(w * scale_x)
+        h_resized = int(h * scale_y)
+
+        # Dibujar un rectángulo alrededor del área seleccionada en la imagen redimensionada
+        image_with_rectangle = image_resized.copy()
+        cv2.rectangle(image_with_rectangle, (x_resized, y_resized), (x_resized + w_resized, y_resized + h_resized), (0, 255, 0), 2)  # Rectángulo verde
+
+        # Mostrar la imagen con el marco
+        cv2.imshow("Imagen con marco", image_with_rectangle)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+        # Recortar la imagen original usando las coordenadas originales
+        cropped_image = image[y:y + h, x:x + w]
+
+        # Crear el directorio de salida si no existe
+        os.makedirs(ruta_salida, exist_ok=True)
+        count = len([name for name in os.listdir(ruta_salida) if name.startswith("recorte_") and name.endswith(".jpg")])
+        output_path = os.path.join(ruta_salida, f"display_{count + 1}.jpg")
+
+        # Guardar la imagen recortada
+        cv2.imwrite(output_path, cropped_image)
+        return output_path
+
     def extract_display_area(self, image: np.ndarray) -> np.ndarray:
         """
         Detects the display area of a tensiometer in an image and crops it.
@@ -111,13 +163,13 @@ class ImageProcessor:
         """
         # Example coordinates for 7 digits to be enclosed
         digit_coordinates = [
-            (80, 50, 135, 155),  # First digit
-            (215, 50, 135, 155),  # Second digit
-            (355, 50, 135, 155),  # Third digit
-            (215, 210, 135, 155),  # Fourth digit
-            (355, 210, 135, 155),  # Fifth digit
-            (360, 382, 75, 90),  # Sixth digit
-            (435, 382, 75, 90)  # Seventh digit
+            (73, 45, 69, 71),  # First digit
+            (139, 45, 69, 71),  # Second digit
+            (205, 45, 69, 71),  # Third digit
+            (139, 119, 69, 71),  # Second digit
+            (205, 119, 69, 71),  # Fifth digit
+            (206, 198, 33, 47),  # Second digit
+            (249, 198, 33, 47)  # Seventh digit
         ]
 
         # Enclose the digits using the provided coordinates
@@ -182,7 +234,7 @@ class ImageProcessor:
             digit_image = image[y:y + h, x:x + w]
 
             # Generate a unique file name for each digit
-            output_filename = os.path.join(output_path, f"digit_{next_digit_number}.png")
+            output_filename = os.path.join(output_path, f"digit_{next_digit_number}.jpg")
 
             # Save the cropped digit image
             cv2.imwrite(output_filename, digit_image)
