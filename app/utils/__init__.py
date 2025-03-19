@@ -2,7 +2,7 @@ import cv2
 from image_processing import ImageProcessor
 
 def main():
-    ruta_imagen = r"C:\Users\garci\OneDrive\Documentos\_IABD\_proyectos\tensoscan\TensoScan_Images\048.jpg"
+    ruta_imagen = r"C:\Users\garci\OneDrive\Documentos\_IABD\_proyectos\tensoscan\TensoScan_Images\033.jpg"
     ruta_salida = r"C:\Users\garci\OneDrive\Documentos\_IABD\_proyectos\tensoscan\TensoScan_Images\images_output"
     coords = (1250, 1700, 1000, 1250)  # (x, y, ancho, alto)
 
