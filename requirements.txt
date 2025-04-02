@@ -3,7 +3,7 @@ cryptography~=44.0.1
 python-dotenv~=1.0.1
 fastapi==0.68.0
 uvicorn==0.15.0
-tensorflow==2.16.1
+tensorflow==2.19.0
 Pillow==9.1.0
 python-multipart
 numpy>=1.19.2
