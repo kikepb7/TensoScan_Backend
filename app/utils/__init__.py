@@ -2,8 +2,8 @@ from image_processing import *
 imageP = ImageProcessor()
 
 #Cargar la imagen del tensiómetro
-image = cv2.imread(r'C:\Users\garci\Documents\_IABD\_iabd_projects\TensoScan_Images\140.jpg')
-image2 = Image.open(r'C:\Users\garci\Documents\_IABD\_iabd_projects\TensoScan_Images\140.jpg')
+image = cv2.imread(r'C:\Users\garci\Documents\_IABD\_iabd_projects\TensoScan_Images\166.jpg')
+image2 = Image.open(r'C:\Users\garci\Documents\_IABD\_iabd_projects\TensoScan_Images\166.jpg')
 image2 = np.array(image2)
 
 print(type(image2))
