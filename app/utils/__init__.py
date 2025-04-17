@@ -1,9 +1,10 @@
 from image_processing import *
+from label_scrip_automatized import *
 imageP = ImageProcessor()
 
 #Cargar la imagen del tensiómetro
-image = cv2.imread(r'C:\Users\garci\Documents\_IABD\_iabd_projects\TensoScan_Images\166.jpg')
-image2 = Image.open(r'C:\Users\garci\Documents\_IABD\_iabd_projects\TensoScan_Images\166.jpg')
+image = cv2.imread(r'C:\Users\garci\Documents\_IABD\_iabd_projects\TensoScan_Images\198.jpg')
+image2 = Image.open(r'C:\Users\garci\Documents\_IABD\_iabd_projects\TensoScan_Images\198.jpg')
 image2 = np.array(image2)
 
 print(type(image2))
@@ -21,3 +22,5 @@ if display_area is not None:
 else:
     print("No se detectó el display.")
 digit_positions = imageP.crop_digit_areas(display_area)
+
+autolabel()
