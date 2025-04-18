@@ -1,8 +1,12 @@
 import glob
 import traceback
+from typing import Optional, List
 
 import cv2
+import httpx
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from openai import BaseModel
+
 from app.models.prediction import NumberRecognizer
 from app.utils.image_processing import ImageProcessor
 from PIL import Image
@@ -157,3 +161,63 @@ async def test_recognition():
         "status": "ok",
         "detected_numbers": sample_numbers,
     }
+
+
+
+OPENAI_MODEL = "gpt-3.5-turbo"
+class ChatMessage(BaseModel):
+    role: str  # "user", "assistant", etc.
+    content: str
+
+class ChatRequest(BaseModel):
+    user_id: str
+    prompt: str
+    history: Optional[List[ChatMessage]]
+
+class ChatResponse(BaseModel):
+    response: str
+
+async def call_openai(messages: List[dict]) -> str:
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                url="https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": OPENAI_MODEL,
+                    "messages": messages,
+                    "temperature": 0.7
+                }
+            )
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
+
+    except httpx.HTTPStatusError as e:
+        logger.error(f"OpenAI API error: {e.response.text}")
+        raise HTTPException(status_code=500, detail="Error from OpenAI API")
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/respond", response_model=ChatResponse)
+async def respond_to_prompt(request: ChatRequest):
+    try:
+        logger.info(f"Chat request from user: {request.user_id}")
+
+        messages = request.history or []
+        messages.append({"role": "user", "content": request.prompt})
+
+        reply = await call_openai(messages)
+        logger.info("Successfully got response from OpenAI")
+        return ChatResponse(response=reply)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in chatbot endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error processing your request")
