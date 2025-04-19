@@ -1,0 +1,56 @@
+import io, logging, os
+from PIL import Image
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from app.domain.models.display_result_model import DisplayRecognitionResult
+from app.infrastructure.services.display_recognizer_service import DisplayRecognizerService
+from app.infrastructure.services.keras_number_recognizer import KerasNumberRecognizer
+from app.infrastructure.services.image_processor_service import ImageProcessorService
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/ocr", tags=["OCR"])
+
+MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '../ia_models', 'modelo_prueba_keras.keras')
+model = KerasNumberRecognizer(MODEL_PATH)
+preprocessor = ImageProcessorService()
+display_service = DisplayRecognizerService(model, preprocessor)
+
+try:
+    logger.info("Initializing NumberRecognizer model...")
+    # model = NumberRecognizer()
+    logger.info("Model initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize model: {str(e)}")
+    raise
+
+
+@router.post("/recognize")
+async def recognize_numbers(image: UploadFile = File(...)):
+    if not image.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="File uploaded is not an image")
+    try:
+        img_bytes = await image.read()
+        img = Image.open(io.BytesIO(img_bytes))
+        result = model.predict(img)
+        return result
+    except Exception as e:
+        logger.error(f"Prediction failed: {e}")
+        raise HTTPException(status_code=500, detail="Prediction failed")
+
+
+@router.post("/display-recognize", response_model=DisplayRecognitionResult)
+async def display_recognize(image: UploadFile = File(...)):
+    try:
+        logger.info(f"Received image: {image.filename}")
+        if not image.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="File uploaded is not an image")
+
+        image_bytes = await image.read()
+        result = display_service.recognize_display(image_bytes)
+        return result
+
+    except Exception as e:
+        logger.error(f"Display recognition failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error processing image")
