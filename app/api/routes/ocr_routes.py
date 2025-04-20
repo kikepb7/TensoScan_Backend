@@ -1,10 +1,14 @@
 import io, logging, os
 from PIL import Image
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from datetime import datetime
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from app.domain.models.display_result_model import DisplayRecognitionResult
 from app.infrastructure.services.display_recognizer_service import DisplayRecognizerService
 from app.infrastructure.services.keras_number_recognizer import KerasNumberRecognizer
 from app.infrastructure.services.image_processor_service import ImageProcessorService
+from app.infrastructure.services.get_user_service import get_current_user
+from app.infrastructure.database.mongo_database import results_collection
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +45,7 @@ async def recognize_numbers(image: UploadFile = File(...)):
 
 
 @router.post("/display-recognize", response_model=DisplayRecognitionResult)
-async def display_recognize(image: UploadFile = File(...)):
+async def display_recognize(image: UploadFile = File(...), user = Depends(get_current_user)):
     try:
         logger.info(f"Received image: {image.filename}")
         if not image.content_type.startswith("image/"):
@@ -49,6 +53,15 @@ async def display_recognize(image: UploadFile = File(...)):
 
         image_bytes = await image.read()
         result = display_service.recognize_display(image_bytes)
+
+        # Save in MongoDB
+        await results_collection.insert_one({
+            "user_id": user["_id"],
+            "filename": image.filename,
+            "result": result.model_dump(),
+            "timestamp": datetime.now()
+        })
+
         return result
 
     except Exception as e:

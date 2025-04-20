@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.api.routes.ocr_routes import router as ocr_router
 from app.api.routes.chatbot_routes import router as chatbot_router
+from app.api.routes.auth_routes import router as auth_router
 import uvicorn
 
 app = FastAPI(
@@ -10,6 +11,7 @@ app = FastAPI(
 
 app.include_router(ocr_router)
 app.include_router(chatbot_router)
+app.include_router(auth_router)
 
 @app.get("/")
 async def root():
