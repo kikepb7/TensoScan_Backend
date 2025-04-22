@@ -1,8 +1,10 @@
 import io, logging, os
+from typing import List
 from PIL import Image
 from datetime import datetime
+from bson import ObjectId
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from app.domain.models.display_result_model import DisplayRecognitionResult
+from app.domain.models.display_result_model import DisplayRecognitionResult, Measurement
 from app.infrastructure.services.display_recognizer_service import DisplayRecognizerService
 from app.infrastructure.services.keras_number_recognizer import KerasNumberRecognizer
 from app.infrastructure.services.image_processor_service import ImageProcessorService
@@ -56,7 +58,7 @@ async def display_recognize(image: UploadFile = File(...), user = Depends(get_cu
 
         # Save in MongoDB
         await results_collection.insert_one({
-            "user_id": user["_id"],
+            "user_id": ObjectId(user["_id"]),
             "filename": image.filename,
             "result": result.model_dump(),
             "timestamp": datetime.now()
@@ -67,3 +69,32 @@ async def display_recognize(image: UploadFile = File(...), user = Depends(get_cu
     except Exception as e:
         logger.error(f"Display recognition failed: {str(e)}")
         raise HTTPException(status_code=500, detail="Error processing image")
+
+
+@router.get("/measurements", response_model=List[Measurement])
+async def get_user_measurements(user=Depends(get_current_user)):
+    try:
+        user_id = user["_id"]
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
+
+        results_cursor = results_collection.find( {"user_id": user_id} )
+        results = await results_cursor.to_list(length=None)
+
+        formatted_results = []
+        for measure in results:
+            formatted_results.append({
+                "filename": measure["filename"],
+                "result": {
+                    "high_pressure": measure["result"]["high_pressure"],
+                    "low_pressure": measure["result"]["low_pressure"],
+                    "pulse": measure["result"]["pulse"],
+                    "confidence": measure["result"]["confidence"],
+                },
+                "timestamp": measure["timestamp"]
+            })
+
+        return formatted_results
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Error retrieving measurements")

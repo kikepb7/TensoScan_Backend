@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 
 class DisplayRecognitionResult(BaseModel):
@@ -5,3 +6,8 @@ class DisplayRecognitionResult(BaseModel):
     low_pressure: str
     pulse: str
     confidence: float
+
+class Measurement(BaseModel):
+    filename: str
+    result: DisplayRecognitionResult
+    timestamp: datetime
