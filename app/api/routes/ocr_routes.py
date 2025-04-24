@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ocr", tags=["OCR"])
 
-MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '../ia_models', 'modelo_prueba_keras.keras')
+MODEL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '../ia_models', 'definitive_model.keras')
 model = KerasNumberRecognizer(MODEL_PATH)
 preprocessor = ImageProcessorService()
 display_service = DisplayRecognizerService(model, preprocessor)
