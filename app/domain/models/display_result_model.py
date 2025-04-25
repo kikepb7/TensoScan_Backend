@@ -8,6 +8,8 @@ class DisplayRecognitionResult(BaseModel):
     confidence: float
 
 class Measurement(BaseModel):
+    measurement_id: str
+    user_id: str
     filename: str
     result: DisplayRecognitionResult
     timestamp: datetime
