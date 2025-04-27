@@ -1,7 +1,6 @@
 # Libraries
 import cv2
 import numpy as np
-from skimage import filters, measure
 from PIL import Image
 
 class ImageProcessor:
