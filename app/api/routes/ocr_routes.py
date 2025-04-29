@@ -4,13 +4,15 @@ from PIL import Image
 from datetime import datetime
 from bson import ObjectId
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Path
+from starlette.responses import HTMLResponse
+
 from app.domain.models.display_result_model import DisplayRecognitionResult, Measurement
 from app.infrastructure.services.display_recognizer_service import DisplayRecognizerService
 from app.infrastructure.services.keras_number_recognizer import KerasNumberRecognizer
 from app.infrastructure.services.image_processor_service import ImageProcessorService
 from app.infrastructure.services.get_user_service import get_current_user
 from app.infrastructure.database.mongo_database import results_collection
-
+from app.utils.html_render import render_measurements_html
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -101,6 +103,25 @@ async def get_user_measurements(user=Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error retrieving measurements")
 
+@router.get("/user/measurements/html", response_class=HTMLResponse)
+async def get_user_measurements_html(user=Depends(get_current_user)):
+    try:
+        user_id = user["_id"]
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
+
+        measurements_cursor = results_collection.find({"user_id": user_id})
+        measurements = await measurements_cursor.to_list(length=None)
+
+        if not measurements:
+            raise HTTPException(status_code=404, detail="No se encontraron mediciones para el usuario.")
+
+        html = render_measurements_html(measurements, str(user_id))
+
+        return HTMLResponse(content=html)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/remove/measurements/{measurement_id}", status_code=204)
 async def remove_measurement(measurement_id: str = Path(...), user=Depends(get_current_user)):
