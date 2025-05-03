@@ -37,7 +37,6 @@
 | 🌐 Networking    | httpx (~0.28.1), requests (2.32.3)          | For making HTTP requests.                                             |
 | 🛡️ Security       | cryptography (44.0.2)                         | Provides cryptographic primitives.                                      |
 | ⚙️ Utilities      | python-dotenv (1.0.1), pydantic (2.11.3)      | Configuration management and data validation.                         |
-| 🧪 Testing        | (Likely pytest, though not explicitly listed) |                                                                       |
 | 🧠 ML/AI          | tensorflow (2.19.0), keras (3.9.2), opencv-python (~4.11.0.86), numpy (1.26.4), scikit-image (~0.24.0) | Libraries for potential AI/ML features.                             |
 | 📊 Data & Science | scipy (1.13.1), matplotlib (3.9.4), plotly (6.0.1) | For data manipulation, scientific computing, and visualization.      |
 | 📄 PDF Handling   | fpdf (1.7.2), pikepdf (9.7.0), pypdf (5.4.0), reportlab (4.4.0), xhtml2pdf (0.2.17) | Libraries for generating and manipulating PDF documents.              |
