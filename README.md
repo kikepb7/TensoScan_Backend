@@ -1,4 +1,4 @@
-# ⚙️ TensoScan Backend
+<h1 align="center">⚙️ TensoScan Backend</h1>
 
 > **Backend services powering the AI-driven blood pressure monitoring ecosystem**
 >
