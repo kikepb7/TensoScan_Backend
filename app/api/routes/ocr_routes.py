@@ -5,7 +5,6 @@ from datetime import datetime
 from bson import ObjectId
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Path
 from starlette.responses import HTMLResponse, StreamingResponse
-
 from app.domain.models.display_result_model import DisplayRecognitionResult, Measurement
 from app.infrastructure.services.display_recognizer_service import DisplayRecognizerService
 from app.infrastructure.services.keras_number_recognizer import KerasNumberRecognizer
@@ -13,6 +12,7 @@ from app.infrastructure.services.image_processor_service import ImageProcessorSe
 from app.infrastructure.services.get_user_service import get_current_user
 from app.infrastructure.database.mongo_database import results_collection
 from app.utils.html_render import render_measurements_html
+from app.utils.pdf_generator import generate_pdf_from_html
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
