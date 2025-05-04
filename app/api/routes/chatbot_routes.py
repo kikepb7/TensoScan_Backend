@@ -1,8 +1,10 @@
 from typing import List
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from app.domain.models.chatbot_model import ChatRequest, ChatResponse
 import logging, os, httpx
+
+from app.infrastructure.services.get_user_service import get_current_user
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -48,11 +50,10 @@ async def call_openai(messages: List[dict]) -> str:
 
 
 @router.post("/chatbot", response_model=ChatResponse)
-async def respond_to_prompt(request: ChatRequest):
+async def respond_to_prompt(request: ChatRequest, user=Depends(get_current_user)):
     try:
-        logger.info(f"Chat request from user: {request.user_id}")
-
-        messages = request.history or []
+        user_id = str(user["_id"])
+        messages = [message.model_dump() for message in request.history] if request.history else []
         messages.append(
             {
                 "role": "user",

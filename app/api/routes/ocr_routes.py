@@ -3,14 +3,16 @@ from typing import List
 from PIL import Image
 from datetime import datetime
 from bson import ObjectId
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Path
+from starlette.responses import HTMLResponse, StreamingResponse
+
 from app.domain.models.display_result_model import DisplayRecognitionResult, Measurement
 from app.infrastructure.services.display_recognizer_service import DisplayRecognizerService
 from app.infrastructure.services.keras_number_recognizer import KerasNumberRecognizer
 from app.infrastructure.services.image_processor_service import ImageProcessorService
 from app.infrastructure.services.get_user_service import get_current_user
 from app.infrastructure.database.mongo_database import results_collection
-
+from app.utils.html_render import render_measurements_html
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -78,12 +80,14 @@ async def get_user_measurements(user=Depends(get_current_user)):
         if isinstance(user_id, str):
             user_id = ObjectId(user_id)
 
-        results_cursor = results_collection.find( {"user_id": user_id} )
+        results_cursor = results_collection.find( { "user_id": user_id } )
         results = await results_cursor.to_list(length=None)
 
         formatted_results = []
         for measure in results:
             formatted_results.append({
+                "measurement_id": str(measure["_id"]),
+                "user_id": str(measure["user_id"]),
                 "filename": measure["filename"],
                 "result": {
                     "high_pressure": measure["result"]["high_pressure"],
@@ -98,3 +102,74 @@ async def get_user_measurements(user=Depends(get_current_user)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error retrieving measurements")
+
+
+@router.get("/user/measurements/html", response_class=HTMLResponse)
+async def get_user_measurements_html(user=Depends(get_current_user)):
+    try:
+        user_id = user["_id"]
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
+
+        measurements_cursor = results_collection.find({"user_id": user_id})
+        measurements = await measurements_cursor.to_list(length=None)
+
+        if not measurements:
+            raise HTTPException(status_code=404, detail="No se encontraron mediciones para el usuario.")
+
+        html = render_measurements_html(measurements)
+
+        return HTMLResponse(content=html)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/user/measurements/pdf")
+async def get_user_measurements_pdf(user=Depends(get_current_user)):
+    try:
+        user_id = user["_id"]
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
+
+        measurements_cursor = results_collection.find({"user_id": user_id})
+        measurements = await measurements_cursor.to_list(length=None)
+
+        if not measurements:
+            raise HTTPException(status_code=404, detail="No se encontraron mediciones.")
+
+        html = render_measurements_html(measurements)
+
+        pdf_file = generate_pdf_from_html(html)
+
+        return StreamingResponse(
+            pdf_file,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=mediciones.pdf"}
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/remove/measurements/{measurement_id}", status_code=204)
+async def remove_measurement(measurement_id: str = Path(...), user=Depends(get_current_user)):
+    try:
+        if not ObjectId.is_valid(measurement_id):
+            raise HTTPException(status_code=400, detail="Invalid measurement ID")
+
+        user_id = user["_id"]
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
+
+        result = await results_collection.delete_one({
+            "_id": ObjectId(measurement_id),
+            "user_id": user_id
+        })
+
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Measurement not found or not authorized")
+
+    except Exception as e:
+        logger.error(f"Failed to delete measurement: {e}")
+        raise HTTPException(status_code=500, detail="Error deleting measurement")

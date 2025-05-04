@@ -6,7 +6,6 @@ class ChatMessage(BaseModel):
     content: str
 
 class ChatRequest(BaseModel):
-    user_id: str
     prompt: str
     history: Optional[List[ChatMessage]]
 

@@ -1,6 +1,3 @@
 .env
-ia_models/modelo_digitos.keras
-ia_models/modelo_digitos.tflite
-ia_models/modelo_prueba_h5.h5
-ia_models/modelo_prueba_keras.keras
-ia_models/modelo_transformado.tflite
+ia_models/definitive_model.keras
+.idea
