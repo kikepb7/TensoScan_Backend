@@ -23,4 +23,4 @@ ENV PYTHONPATH=/app
 EXPOSE 8000
 
 # Comando para arrancar la aplicación
-CMD ["python", "app/main.py"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
