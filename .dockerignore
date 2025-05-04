@@ -7,7 +7,6 @@ __pycache__/
 *.pyd
 *.db
 *.sqlite3
-.env
 *.log
 
 # Ignorar archivos de Docker que no se necesitan dentro del contenedor
