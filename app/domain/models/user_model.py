@@ -12,3 +12,18 @@ class UserCreate(BaseModel):
     last_name: str
     email: EmailStr
     password: str
+
+class UserPublic(BaseModel):
+    id: str
+    email: EmailStr
+    name: str
+    last_name: str
+
+    @classmethod
+    def from_mongo(cls, data: dict):
+        return cls(
+            id=str(data["_id"]),
+            email=data["email"],
+            name=data["name"],
+            last_name=data["last_name"]
+        )

@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from app.domain.models.user_model import UserCreate
+from app.domain.models.user_model import UserCreate, UserPublic
 from app.infrastructure.services.auth_service import hash_password, create_access_token, authenticate_user
 from app.infrastructure.database.mongo_database import users_collection
+from app.infrastructure.services.get_user_service import get_current_user
 
 router = APIRouter()
 
@@ -28,3 +29,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     token = create_access_token(data={"sub": user.id})
 
     return {"access_token": token, "token_type": "bearer"}
+
+@router.get("/me", response_model=UserPublic)
+async def read_current_user(current_user: dict = Depends(get_current_user)):
+    return UserPublic.from_mongo(current_user)
