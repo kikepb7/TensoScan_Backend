@@ -2,7 +2,7 @@
 
 > Requisito previo: B-001 (al menos T-B001-01…07). Commit: `T-B002-xx | <descripción en inglés>`.
 
-- [ ] **T-B002-01 · Dominio de mediciones + `ReadingRules`**
+- [x] **T-B002-01 · Dominio de mediciones + `ReadingRules`**
   - Fixture de los casos dorados leída desde `specs/contracts/reading-golden-cases.json` (sin
     copias). Payload canónico.
   - Req.: REQ-B002-01, 05 · Hallazgos: AUD-B-15.
