@@ -18,7 +18,7 @@
   - Eliminar `html_render.py` (salvo la plantilla con *autoescape* para el alias legacy),
     `pdf_generator.py` y xhtml2pdf.
   - Req.: REQ-B002-08…10 · Hallazgos: AUD-B-21, 22, 23 · DoD: CA-B002-08.
-- [ ] **T-B002-06 · Script de migración m001 + tests** (incluye los casos de cambio de hora)
+- [x] **T-B002-06 · Script de migración m001 + tests** (incluye los casos de cambio de hora)
   - Req.: REQ-B002-11 · DoD: CA-B002-09.
 - [ ] **T-B002-07 · Rutas legacy de mediciones sobre la nueva colección + log de uso**
   - Req.: REQ-B002-12, 14 · DoD: CA-B002-10.
