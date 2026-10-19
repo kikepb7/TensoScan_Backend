@@ -60,7 +60,7 @@ target-version = "py312"
 extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "RUF", "S", "T20", "PT", "NPY", "PIE", "RET", "TID"]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "RUF", "S", "T20", "PT", "NPY", "PIE", "RET", "TID", "DTZ"]
 ignore = [
     "RUF001",  # Spanish text in docstrings is intentional
     "RUF002",

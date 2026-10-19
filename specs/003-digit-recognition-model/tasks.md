@@ -11,9 +11,11 @@
   - Nota de implementación: la CLI es `argparse` (sin dependencias); cada subcomando vive en `tensoscan_ml/commands/`.
     El CI tiene dos jobs: `ml-tests` (núcleo ligero, lint, auditoría de licencias y tests rápidos) y `ml-tests-heavy`
     (todos los extras, mypy y todos los tests en CPU). `release` queda como esqueleto (T-B003-13).
-- [ ] **T-B003-02 · `tensoscan_ml.reading`: parser y validador oficiales**
+- [x] **T-B003-02 · `tensoscan_ml.reading`: parser y validador oficiales**
   - Tests con **todos** los casos dorados (leídos de `specs/contracts/`).
   - Req.: REQ-B003-04 · DoD: CA-B003-03.
+  - Nota de implementación: el validador omite `POSSIBLE_DUPLICATE` (solo app, necesita el historial); `IN_FUTURE` y
+    `TOO_OLD` solo se evalúan si se pasa `measured_at`.
 
 ## Fase 2 — Datos sintéticos
 - [ ] **T-B003-03 · Render de glifos de 7 segmentos**
