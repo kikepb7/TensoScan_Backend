@@ -1,0 +1,52 @@
+{
+  "name": "digit-detector",
+  "version": "0.0.0-dummy-fixed",
+  "contract_version": "1.0.0",
+  "input": {
+    "width": 320,
+    "height": 320,
+    "channels": 3,
+    "dtype": "float32",
+    "range": [
+      0,
+      1
+    ],
+    "letterbox_pad": 0.447
+  },
+  "output": {
+    "num_candidates": 2100,
+    "box_format": "cxcywh_normalized",
+    "scores": "sigmoid"
+  },
+  "classes": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "colon",
+    "dash",
+    "E",
+    "r"
+  ],
+  "recommended": {
+    "score_threshold": 0.4,
+    "nms_iou_threshold": 0.45,
+    "max_detections": 32
+  },
+  "sha256": "13b600151bef0fadd4a5379250650fffc020f27d623d16e5597ca834be86e319",
+  "training": {
+    "dataset_version": "dummy-fixed",
+    "git_commit": "dummy"
+  },
+  "metrics": {
+    "reading_exact_match_real_test": 0.0,
+    "map50_synthetic_val": 0.0,
+    "map50_real_test": 0.0
+  }
+}

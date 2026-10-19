@@ -1,0 +1,6 @@
+# Export to the model contract (REQ-B003-18). Command-line flags override these values.
+version: 0.1.0 # semver of the artefact: MAJOR changes the I/O or classes, MINOR retrains, PATCH fixes metadata
+precision: float16 # float16 (default) | float32 | int8
+onnx_opset: 17 # fixed opset of the ONNX export
+int8_samples: 300 # representative images for the int8 calibration
+dataset_version: unknown

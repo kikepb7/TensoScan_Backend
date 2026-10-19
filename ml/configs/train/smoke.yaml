@@ -1,0 +1,31 @@
+# CPU smoke test: a tiny network on a handful of synthetic images, a few epochs (seconds). Proves that the whole
+# pipeline runs end to end and that the loss goes down; it is not meant to give a useful model.
+name: smoke
+seed: 7
+device: cpu
+input_size: 160
+out_dir: $TENSOSCAN_ML_DATA_DIR/runs
+
+arch: { name: yolox-nano, depth: 0.33, width: 0.125, depthwise: true }
+optimizer: { name: adamw, weight_decay: 0.0005, grad_clip: 10.0, ema_decay: 0.99 }
+
+data:
+  synthetic:
+    path: $TENSOSCAN_ML_DATA_DIR/synth/smoke
+    autogenerate: { train: 8, val: 4 }
+    synth_overrides: { image: { width: 160, height: 200 }, scene: { yaw_deg: 5.0, pitch_deg: 5.0, roll_deg: 2.0 } }
+  real: { train: null, val: null }
+
+stages:
+  - name: pretrain-synthetic
+    epochs: 80
+    batch_size: 8
+    lr: 0.005
+    warmup_epochs: 3
+    min_lr_ratio: 0.2
+    samples_per_epoch: 8
+    augment: false # a handful of images: this stage only checks that the loss can go down
+    replacement: false # every epoch is the same full batch, like an overfitting test
+    sources: { synthetic: 1.0 }
+    eval_every: 20
+    val_images: 4
