@@ -30,8 +30,9 @@
 - [ ] **T-B003-06 · Ingesta (`naming`, `ingest`, `split`) + documento del protocolo**
   - Tests con vídeos sintéticos generados en el propio test.
   - Req.: REQ-B003-09…12 · DoD: CA-B003-04.
-- [ ] 🧑 **T-B003-06b · Captura de datos reales según el protocolo (design §4)**
-  - Bloquea T-B003-09 (*fine-tuning*) y la evaluación de aceptación.
+- [ ] 🧑 **T-B003-06b · Aportar datos reales (etapa 2)**
+  - Hoy: fotos de 1 tensiómetro con varios valores (`labels.csv`). Para `production`: ≥ 3 dispositivos.
+  - Bloquea T-B003-09 (*fine-tuning*) y la evaluación de aceptación, no el resto del código.
 
 ## Fase 4 — Modelo
 - [ ] **T-B003-07 · Harness de evaluación (`eval`)**
@@ -46,6 +47,11 @@
 - [ ] **T-B003-09 · Pipeline de entrenamiento de 2 etapas**
   - Configs, semillas, *checkpoints* y curvas.
   - Req.: REQ-B003-15.
+- [ ] **T-B003-10b · Modelo «dummy» conforme al contrato (pesos aleatorios)**
+  - `tensoscan-ml dummy-model` genera un `.tflite` + sidecar con la E/S exacta del contrato, sin valor
+    predictivo. Permite completar y testear en la app todo el código de `LiteRtDigitDetector`
+    (carga, verificación sha256, preprocesado, decodificación y latencia) **antes** de entrenar.
+  - Req.: REQ-B003-18, 19.
 - [ ] **T-B003-10 · Exportación al contrato** (`OutputContractWrapper`, float16 e int8)
   - Req.: REQ-B003-18.
 - [ ] **T-B003-11 · `verify`** (E/S, operaciones *builtin*, clases, tamaño, latencia y set dorado)
@@ -56,7 +62,8 @@
 ## Fase 5 — Release
 - [ ] **T-B003-13 · `release` v1.0.0**
   - Umbrales, sidecar, *model card*, GitHub Release y PR a la app (App T-A002-33/35).
-  - Req.: REQ-B003-20, 21 · DoD: CA-B003-06 y las métricas de requirements §1 cumplidas en real.
+  - Canales `beta` y `production` (requirements §1). Con un solo dispositivo solo es posible `beta`.
+  - Req.: REQ-B003-20, 21 · DoD: CA-B003-06, 07 y las métricas de requirements §1 en real.
 
 ## Cierre
 - [ ] `report.md` de la release archivado en `ml/reports/digits-1.0.0.md`.

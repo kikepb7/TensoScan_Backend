@@ -79,6 +79,13 @@ seguridad críticos (AUD-B-27…29) que no deben esperar a la feature.
   en el registro (10/h) y en el refresh (30/min), y por usuario en el asistente (20/min), con
   respuesta `429 RATE_LIMITED` y cabecera `Retry-After`.
 
+### Supresión de cuenta
+- **REQ-B001-25**: `DELETE /v1/users/me` DEBERÁ exigir la contraseña y, si es correcta, borrar en
+  este orden: mediciones, refresh tokens y usuario. SI el borrado queda a medias por un fallo,
+  ENTONCES DEBERÁ poder reintentarse sin dejar datos huérfanos (se borran primero los datos
+  dependientes y el usuario al final). Debe registrarse un evento de auditoría sin datos
+  personales (`user_deleted`, id con hash).
+
 ### Asistente
 - **REQ-B001-19**: `POST /v1/assistant/messages` DEBERÁ delegar en un puerto `LlmClient` con el
   modelo configurable (`ASSISTANT_MODEL`), un *system prompt* de seguridad (no diagnosticar,
@@ -117,6 +124,7 @@ seguridad críticos (AUD-B-27…29) que no deben esperar a la feature.
 | CA-B001-09 | Dado un usuario con hash bcrypt, cuando inicia sesión, entonces entra y su hash pasa a ser Argon2id | 16 |
 | CA-B001-10 | Dada la imagen Docker, cuando la inspecciono, entonces no hay `.env` y el usuario no es root | 21 |
 | CA-B001-11 | Dada la app actual (`master`), cuando usa `/login`, `/register`, `/me` y `/ai/chatbot`, entonces funciona igual | 20 |
+| CA-B001-13 | Dado un usuario con mediciones y sesiones, cuando elimina su cuenta con la contraseña correcta, entonces → 204 y no queda ningún documento suyo en `users`, `measurements` ni `refresh_tokens`; con contraseña incorrecta → 401 y no se borra nada | 25 |
 | CA-B001-12 | Dado un PR, cuando se abre, entonces CI ejecuta lint, tipos, tests con Mongo, cobertura y build | 23 |
 
 ## 5. Fuera de alcance
@@ -129,4 +137,5 @@ seguridad críticos (AUD-B-27…29) que no deben esperar a la feature.
 | ID | Pregunta | Propuesta |
 |----|----------|-----------|
 | Q-B001-01 | ¿Dónde se despliega producción (VPS, Render, Fly, GCP...)? ¿Mongo gestionado (Atlas)? | Afecta solo a la documentación de despliegue y a los secretos; el diseño es agnóstico |
+| Q-LEGAL-01 | Valoración regulatoria (RGPD y producto sanitario) y alojamiento en la UE | Imprescindible antes de publicar (ver constitución de la app, C-LEGAL); no bloquea el desarrollo |
 | Q-B001-02 | ¿Se mantiene OpenAI como proveedor del asistente? | Sí, detrás del puerto `LlmClient` (intercambiable) |

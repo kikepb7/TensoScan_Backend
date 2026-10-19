@@ -5,7 +5,7 @@
 > **primero aquí**, sube la versión del documento y se replica en la app dentro del mismo PR o en
 > uno enlazado.
 >
-> Versión del contrato: **1.0.0** · Estado: 📝 Pendiente de aprobación
+> Versión del contrato: **1.1.0** · Estado: 📝 Pendiente de aprobación
 
 ## 1. Convenciones generales
 
@@ -94,6 +94,17 @@ username=ana@example.com&password=********
 { "id": "6712...", "email": "ana@example.com", "name": "Ana", "last_name": "García" }
 ```
 
+### `DELETE /v1/users/me` — supresión de cuenta (RGPD art. 17 y requisito de Google Play)
+```json
+// request
+{ "password": "********" }
+// 204 No Content
+```
+- Borra de forma definitiva al usuario, **todas** sus mediciones y todos sus refresh tokens.
+- `401 INVALID_CREDENTIALS` si la contraseña no coincide (evita que un token robado borre la cuenta).
+- Es idempotente solo en el sentido de que, tras el 204, cualquier token del usuario devuelve
+  `401 UNAUTHORIZED`.
+
 ## 3. Mediciones
 
 ### 3.1 Recurso `Measurement`
@@ -149,7 +160,8 @@ username=ana@example.com&password=********
 
 ### `GET /v1/measurements/report?format=pdf`
 - Query: `from`, `to` (opcionales) y `tz` (zona IANA para formatear las fechas, por ejemplo
-  `Europe/Madrid`; por defecto `UTC`).
+  `Europe/Madrid`; por defecto, la zona configurada en el servidor `TENSOSCAN_DEFAULT_REPORT_TZ`, que vale
+  `Europe/Madrid`).
 - `200 application/pdf` con `Content-Disposition: attachment; filename="tensoscan-report-YYYYMMDD.pdf"`.
 - `404 NOT_FOUND` si no hay mediciones en el rango.
 - Nota: el formato `html` se **elimina** de v1. La app pinta su propio gráfico nativo (ver
@@ -195,3 +207,4 @@ nueva ven los mismos datos.
 | Versión | Fecha | Cambio |
 |---------|-------|--------|
 | 1.0.0 | 2026-10-19 | Versión inicial |
+| 1.1.0 | 2026-10-19 | Añade `DELETE /v1/users/me`; la zona horaria por defecto del informe pasa a ser `Europe/Madrid` |

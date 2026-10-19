@@ -53,7 +53,7 @@ un segundo detector.
 |-----------|----------|------|---------|
 | **YOLOX-Nano** | Apache-2.0 | Muy pequeña (~0,9 M parámetros), *anchor-free*, buen rendimiento con objetos pequeños | Exportación vía ONNX → onnx2tf (hay que validar las operaciones) |
 | **NanoDet-Plus-m** | Apache-2.0 | Diseñada para móvil, muy rápida | Mismo camino de exportación; comunidad menor |
-| Ultralytics YOLO (v8n/11n) | **AGPL-3.0** | Mejor herramienta y exportación a TFLite integrada | Obliga a licenciar la app bajo AGPL o comprar una licencia Enterprise (Q-B003-01) |
+| ~~Ultralytics YOLO (v8n/11n)~~ | **AGPL-3.0** | — | **Descartada**: la app es comercial y de código cerrado; AGPL obligaría a abrir el código o a comprar una licencia Enterprise |
 | EfficientDet-Lite0 (MediaPipe Model Maker) | Apache-2.0 | Exportación TFLite nativa | Menos precisa con objetos pequeños, su postprocesado usa una operación propia y el mantenimiento de Model Maker es incierto |
 
 **Criterios del *spike* (T-B003-08)**, por orden:
@@ -145,6 +145,11 @@ subconjunto de ~300 frames reales, para el *fine-tuning* y el mAP real.
 
 **Material**: tensiómetros disponibles (Q-B003-02) y el móvil con la cámara normal.
 
+**Material ya existente** (fotos de un tensiómetro con varias lecturas): no hace falta renombrar
+nada; basta un `labels.csv` con `file,device,sys,dia,pul,condition` y, si las fotos muestran el
+aparato entero, la opción `--roi-mode manual` (o recortar a mano). Con un solo dispositivo se publica
+en el canal `beta` (requirements §1).
+
 **Por cada tensiómetro y cada medición real que se haga**:
 1. Hacer la medición normal en el aparato. **Anotar los tres valores** que muestra.
 2. Grabar un **vídeo de 15–30 s** apuntando al display, moviendo el móvil despacio (acercar y
@@ -208,6 +213,17 @@ volcadas por la app con ML Kit en modo debug, para comparar el *baseline* con la
    y uso previsto) y empaqueta `dist/digits-<v>/`. La subida a GitHub Releases es manual o con
    `gh` en CI.
 
+## 7 bis. Entorno de entrenamiento
+
+- El entorno de desarrollo asistido (este) tiene 4 CPU, 16 GB y **sin GPU**: sirve para el
+  generador, la ingesta, el parser, la evaluación, las pruebas de exportación y un entrenamiento de
+  humo (pocas épocas, para validar que todo el pipeline funciona de extremo a extremo).
+- El entrenamiento completo se ejecuta en **Google Colab o Kaggle** (GPU gratuita) o en una máquina
+  con GPU del responsable, con un cuaderno de arranque (`ml/notebooks/train_colab.ipynb`) que
+  instala el paquete, monta los datos y lanza `tensoscan-ml train`. Se estima de 1 a 3 horas por
+  entrenamiento con 30.000 imágenes a 320 px.
+- Los pesos y artefactos no se versionan en git: se publican como *assets* de una GitHub Release.
+
 ## 8. Riesgos
 
 | Riesgo | Mitigación |
@@ -216,4 +232,4 @@ volcadas por la app con ML Kit en modo debug, para comparar el *baseline* con la
 | Pocos dispositivos reales | Priorizar diversidad (marca y tipo de LCD) frente a cantidad; el sintético cubre la variedad de fuentes |
 | Operaciones no soportadas al convertir | Criterio 2 del *spike*; arquitectura sin operaciones exóticas; `verify` en CI de la release |
 | Fuga de datos entre train y test (frames del mismo vídeo) | División agrupada por dispositivo y vídeo |
-| Licencias | ADR-B003-02 y Q-B003-01 |
+| Licencias | Solo dependencias permisivas; auditar `pip-licenses` en CI del paquete `ml/` (falla ante GPL/AGPL) |

@@ -15,14 +15,19 @@ parte de una spec aprobada y su commit referencia la tarea (`T-B00x-yy`) y los r
 3. **Refactorizar el servicio** para cumplir buenas prácticas de arquitectura, seguridad, testing
    y operación (B-001).
 
+> **Plan de implementación y decisiones vigentes**: ver `TensoScan_App/specs/implementation-plan.md`
+> (plan común a los dos repositorios). Resumen: app comercial → solo licencias permisivas en `ml/`;
+> zona horaria `Europe/Madrid`; primero todo el código y después entrenamiento con datos reales
+> (canal `beta` con 1 dispositivo, `production` con ≥ 3).
+
 ## 2. Mapa de specs
 
 | ID | Spec | Tipo | Depende de | Estado |
 |----|------|------|-----------|--------|
 | 000 | [Auditoría del estado actual](000-baseline-audit/audit.md) | Análisis | — | ✅ Redactada |
-| 001 | [Fundación de plataforma](001-platform-foundation/requirements.md) | Refactor | 000 | 📝 Pendiente de aprobación |
-| 002 | [API de mediciones v1](002-measurements-api-v1/requirements.md) | Feature + migración | 001 | 📝 Pendiente de aprobación |
-| 003 | [Modelo de detección de dígitos](003-digit-recognition-model/requirements.md) | ML | — (en paralelo) | 📝 Pendiente de aprobación |
+| 001 | [Fundación de plataforma](001-platform-foundation/requirements.md) | Refactor | 000 | 👀 En revisión |
+| 002 | [API de mediciones v1](002-measurements-api-v1/requirements.md) | Feature + migración | 001 | 👀 En revisión |
+| 003 | [Modelo de detección de dígitos](003-digit-recognition-model/requirements.md) | ML | — (en paralelo) | 👀 En revisión |
 
 Contratos compartidos con la app (**fuente canónica aquí**):
 

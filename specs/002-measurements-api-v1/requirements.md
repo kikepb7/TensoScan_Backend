@@ -66,7 +66,10 @@ deben migrarse sin pérdida.
   `recognition_results` → `measurements`:
   - parsea los valores a `int`;
   - `client_id = uuid5(NAMESPACE_TENSOSCAN, str(legacy_id))`;
-  - `measured_at = created_at = timestamp` interpretado en `--legacy-tz` (por defecto UTC);
+  - `measured_at = created_at = timestamp` interpretado en `--legacy-tz` (por defecto
+    `Europe/Madrid`, decisión del responsable) y convertido a UTC. Las horas ambiguas del cambio de
+    hora de otoño se resuelven con `fold=0` y las inexistentes de primavera se desplazan 1 h
+    hacia delante; ambas se anotan en el informe;
   - `source = camera` y `recognition = {confidence, model_version: "legacy-keras", edited_fields: []}`.
 
   Los documentos inválidos (no numéricos o fuera de rango) **no** se migran y se listan en un
@@ -109,5 +112,5 @@ deben migrarse sin pérdida.
 
 | ID | Pregunta | Propuesta |
 |----|----------|-----------|
-| Q-B002-01 | ¿En qué zona horaria corría el servidor que generó los `timestamp` legacy? | Si era Docker → UTC (valor por defecto del script); si no, pasar `--legacy-tz Europe/Madrid` |
+| ~~Q-B002-01~~ | ✅ **Resuelta**: los `timestamp` legacy se interpretan como `Europe/Madrid` | — |
 | Q-B002-02 | ¿Hay datos de producción reales que migrar o solo de desarrollo? | Determina si se necesita una ventana de migración |

@@ -115,6 +115,7 @@ class Settings(BaseSettings):
     assistant_provider_api_key: SecretStr | None = None
     assistant_model: str = "gpt-4o-mini"        # configurable; validar disponibilidad al desplegar
     log_json: bool = True
+    default_report_tz: str = "Europe/Madrid"   # zona por defecto del informe PDF (decisión: Madrid)
 ```
 
 ## 4. Errores

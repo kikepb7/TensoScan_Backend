@@ -45,6 +45,12 @@
   - Test de compatibilidad con las peticiones de la app actual.
   - Req.: REQ-B001-20. DoD: CA-B001-11.
 
+- [ ] **T-B001-14 · Supresión de cuenta `DELETE /v1/users/me`**
+  - Caso de uso `DeleteAccount` (verifica contraseña, borra mediciones → refresh tokens → usuario).
+    El repositorio de mediciones expone `delete_all_for_user` (se implementa en B-002 T-B002-02; hasta
+    entonces el caso de uso recibe el puerto con una implementación vacía).
+  - Req.: REQ-B001-25 · DoD: CA-B001-13. Contrato `api-v1.md` 1.1.0.
+
 ## Fase 3 — Operación
 - [ ] **T-B001-10 · Docker y compose seguros**
   - Hallazgos: AUD-B-28, 29, 37, 45 · Req.: REQ-B001-21, 22. DoD: CA-B001-10.

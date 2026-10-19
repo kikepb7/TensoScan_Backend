@@ -122,7 +122,7 @@ está deprecada. Se documenta como excepción y lo cubre un test.
 ## 7. Migración (REQ-B002-11)
 
 ```
-uv run python -m app.infrastructure.mongo.migrations.m001_measurements --dry-run [--legacy-tz UTC]
+uv run python -m app.infrastructure.mongo.migrations.m001_measurements --dry-run [--legacy-tz Europe/Madrid]
 ```
 1. Recorre `recognition_results` ordenado por `_id`.
 2. Por documento: intenta construir `Reading(int(hp), int(lp), int(p))`. Si falla →
@@ -131,6 +131,11 @@ uv run python -m app.infrastructure.mongo.migrations.m001_measurements --dry-run
    `update_one({user_id, client_id}, {$setOnInsert: doc}, upsert=True)`. Por eso es idempotente.
 4. Al final escribe el informe en el log y en `migration_reports` (`{migration: "m001", ran_at,
    migrated, skipped:[...]}`).
+
+**Cambios de hora**: se usa `zoneinfo.ZoneInfo("Europe/Madrid")`. Un `timestamp` naive en la hora
+repetida de octubre se interpreta con `fold=0` (primera ocurrencia) y uno en la hora inexistente de
+marzo se normaliza sumando 1 h. Ambos casos se cuentan en el informe de migración
+(`ambiguous_local_times`, `nonexistent_local_times`) y se cubren con tests.
 
 `NAMESPACE_TENSOSCAN` es un UUID fijo declarado en el código. **Nunca cambia**, porque la app
 reconcilia por `client_id`.

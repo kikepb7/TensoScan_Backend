@@ -12,8 +12,16 @@ necesita un **detector de glifos de 7 segmentos** pequeño (≤ 6 MB), rápido e
 e independiente del modelo de tensiómetro, cuya salida convierte en SYS/DIA/PUL el parser
 determinista compartido.
 
-**Objetivo medible (v1.0.0)**: sobre el set de test **real** (dispositivos no vistos en el
-entrenamiento):
+**Canales de publicación** (decisión motivada por disponer hoy de un único tensiómetro):
+
+| Canal | Condición de datos reales | Uso |
+|-------|---------------------------|-----|
+| `beta` | ≥ 1 dispositivo, ≥ 30 lecturas distintas | Pruebas internas y beta cerrada. El *model card* declara que no hay evaluación en dispositivos no vistos |
+| `production` | ≥ 3 dispositivos de marcas o tipos de LCD distintos, con al menos 1 **excluido** del entrenamiento | Publicación comercial |
+
+**Objetivo medible**: sobre el set de test **real**. Para `production` los umbrales aplican a
+dispositivos no vistos; para `beta` aplican a lecturas (valores) no vistas del mismo dispositivo y
+son, por tanto, optimistas:
 
 | Métrica | Umbral de aceptación |
 |---------|----------------------|
@@ -67,19 +75,25 @@ entrenamiento):
 
 ### Datos reales
 - **REQ-B003-09**: DEBERÁ existir un protocolo de captura (design §4) que se pueda seguir sin
-  conocimientos técnicos. La etiqueta de la lectura se codifica en el nombre del fichero.
+  conocimientos técnicos. La etiqueta de la lectura se codifica en el nombre del fichero **o** en un
+  `labels.csv` (`file,device,sys,dia,pul,condition`) para material ya existente. Se admiten vídeos
+  e imágenes.
 - **REQ-B003-10**: `ingest` DEBERÁ:
-  - validar el nombre del fichero;
-  - extraer frames de los vídeos (por defecto 3 fps);
+  - validar el nombre del fichero o las filas de `labels.csv`;
+  - extraer frames de los vídeos (por defecto 3 fps) y procesar las imágenes sueltas tal cual;
   - descartar los borrosos (varianza del laplaciano por debajo del umbral);
   - deduplicar (hash perceptual);
-  - recortar la ROI simulando la de la app (centrada, el 80 % del ancho y una relación de aspecto
-    de 4:5);
+  - recortar la ROI según `--roi-mode`: `center` (simula la de la app: centrada, el 80 % del ancho y
+    una relación de aspecto de 4:5), `none` (la imagen ya está encuadrada) o `manual` (lista de
+    rectángulos en `labels.csv`). Con `--preview` genera una hoja de contactos para validar el
+    encuadre antes de procesar el lote;
   - generar un manifiesto JSONL con el sha256 de cada fichero.
 - **REQ-B003-11**: Los datos reales NO DEBERÁN versionarse en git (C-ML-03). Solo el manifiesto.
   Su ubicación se configura con `TENSOSCAN_ML_DATA_DIR`.
-- **REQ-B003-12**: `split` DEBERÁ separar por **modelo de tensiómetro** (agrupado): al menos un
-  modelo completo DEBERÁ quedar solo en test.
+- **REQ-B003-12**: `split` DEBERÁ agrupar para evitar fugas: SI hay ≥ 3 dispositivos, ENTONCES al
+  menos uno DEBERÁ quedar solo en test; SI hay menos, ENTONCES DEBERÁ agrupar por **lectura**
+  (combinación SYS/DIA/PUL) y por vídeo o ráfaga, de modo que ninguna lectura aparezca en train y test,
+  y el informe DEBERÁ marcar la evaluación como `beta`.
 - **REQ-B003-13**: `prelabel` DEBERÁ generar pre-anotaciones (formato CVAT/YOLO) con el mejor
   modelo disponible para el subconjunto real que se anote con cajas.
 
@@ -106,9 +120,9 @@ entrenamiento):
   - el tamaño;
   - la latencia en CPU (indicativa);
   - que el modelo reproduce las lecturas de un set de 20 imágenes dorado.
-- **REQ-B003-20**: `release` DEBERÁ generar el sidecar JSON (contrato §5) con el sha256 y las
-  métricas reales, el *model card* y el paquete de *release*. Solo DEBERÁ permitirlo SI se cumplen
-  los umbrales de §1 (C-ML-04).
+- **REQ-B003-20**: `release --channel {beta|production}` DEBERÁ generar el sidecar JSON (contrato
+  §5) con el sha256 y las métricas reales, el *model card* y el paquete de *release*. Solo DEBERÁ
+  permitirlo SI se cumplen los umbrales de §1 y las condiciones de datos del canal (C-ML-04).
 - **REQ-B003-21**: La entrega a la app DEBERÁ hacerse con un PR a `TensoScan_App` que añada los
   artefactos a `data/src/main/assets/models/` y actualice `DIGIT_DETECTOR_PRIMARY` (tarea App
   T-A002-35).
@@ -128,6 +142,8 @@ entrenamiento):
 | CA-B003-04 | Dado `omron-m3__128-82-67__dim__01.mp4`, cuando lo ingesto, entonces obtengo frames recortados con la etiqueta 128/82/67, sin borrosos ni duplicados, y entradas en el manifiesto | 10 |
 | CA-B003-05 | Dado un `.tflite` exportado, cuando ejecuto `verify`, entonces todas las comprobaciones pasan | 19 |
 | CA-B003-06 | Dadas métricas por debajo del umbral, cuando ejecuto `release`, entonces falla con el detalle | 20 |
+| CA-B003-07 | Dado un dataset real de un solo dispositivo, cuando ejecuto `release --channel production`, entonces falla indicando que faltan dispositivos | 12, 20 |
+| CA-B003-08 | Dado un `labels.csv` y fotos sueltas, cuando ejecuto `ingest --preview`, entonces obtengo la hoja de contactos y ninguna imagen se descarta en silencio | 9, 10 |
 
 ## 5. Fuera de alcance
 - Detector de esquinas del display (v2, según App ADR-A002-04).
@@ -138,7 +154,8 @@ entrenamiento):
 
 | ID | Pregunta | Propuesta |
 |----|----------|-----------|
-| Q-B003-01 | ¿La app será comercial o de código cerrado? (Afecta a las licencias AGPL: Ultralytics) | Usar arquitecturas Apache-2.0 por defecto |
-| Q-B003-02 | ¿Qué tensiómetros reales hay disponibles? (≥ 3 modelos; ideal ≥ 5 de marcas distintas) | Necesita respuesta |
+| ~~Q-B003-01~~ | ✅ **Resuelta**: la app será comercial → solo arquitecturas con licencia permisiva (Apache-2.0/MIT); se descarta Ultralytics (AGPL-3.0) | — |
+| Q-B003-02 | Hoy hay **1 tensiómetro** con varias lecturas (fotos). Para `production` hacen falta ≥ 3 dispositivos | Se avanza con el canal `beta`; se pide ampliar dispositivos antes del lanzamiento comercial |
+| Q-B003-05 | Las fotos existentes: ¿cuántas?, ¿qué valores muestran? (hace falta SYS/DIA/PUL de cada una) y ¿están encuadradas sobre el display o muestran todo el aparato? | A aportar al final (etapa 2). Con eso se decide `--roi-mode` |
 | Q-B003-03 | ¿Hay GPU disponible (local o Colab/Kaggle) para entrenar? | Colab o Kaggle (gratis) para v1 |
 | Q-B003-04 | ¿Dónde se guardan los datos reales (disco local, Drive o bucket)? | Carpeta local + copia en Drive; solo el manifiesto en git |
