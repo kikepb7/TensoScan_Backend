@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import contextlib
 import json
 from typing import Any
 
 import pytest
 
 from tensoscan_ml.config import contracts_dir
+
+# Importing torch._dynamo for the first time *after* TensorFlow is loaded in the same process crashes (the triton
+# extension clashes with it). The export tests load TensorFlow, the training tests create optimisers, so load it first.
+with contextlib.suppress(ImportError):
+    import torch._dynamo  # noqa: F401
 
 
 @pytest.fixture(scope="session")
