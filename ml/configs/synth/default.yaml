@@ -1,0 +1,84 @@
+# Synthetic dataset generator (spec B-003, design section 3). Every value is a range sampled per image unless noted.
+# Edit a copy and pass it with `tensoscan-ml synth --config my.yaml` or override single values with `--set a.b=c`.
+seed: 42
+dataset_version: ds-synth-0.1.0
+
+# Output: one image per sample, the size of the app's ROI crop (portrait 4:5, <= 640 px, REQ-B003-07).
+image:
+  width: 384
+  height: 480
+  format: jpg # jpg | png
+  jpeg_quality: [40, 95]
+
+# Fonts of the seven-segment glyphs (REQ-B003-05). Sizes are fractions of the glyph height.
+glyph:
+  thickness: [0.10, 0.22]
+  gap: [0.01, 0.04]
+  slant_deg: [0.0, 12.0]
+  bevel: [0.0, 1.0]
+  rounded_prob: 0.20
+  width_ratio: [0.38, 0.62]
+  digit_spacing: [0.03, 0.22]
+  ghost_alpha: [0.0, 0.30] # opacity of the switched-off segments
+  six_tail_prob: 0.7
+  nine_tail_prob: 0.7
+  seven_f_prob: 0.15
+  # Share of fonts whose "1" sits close enough to its neighbour for the official parser (see ml/README, finding F1).
+  parser_compatible_prob: 0.5
+  # Margin added around the tight glyph box, per side, as a fraction of the box size (4 % in total, design 3.1).
+  label_margin: 0.02
+
+# Share of each layout template (design section 3.2). Must add up to 1.
+layouts:
+  stacked_small_pulse: 0.35
+  three_rows_equal: 0.15
+  sys_dia_row_pulse_below: 0.15
+  clock_date: 0.10 # one of the three above, with the clock and the date always visible
+  error: 0.05 # E1 / Err
+  measuring: 0.05 # ---
+  negative: 0.05 # display switched off or casing without display
+  out_of_coverage: 0.10 # a lone number or four digits (robustness of the glyphs)
+  # Probability of the distractors on the covered templates.
+  clock_prob: 0.15
+  date_prob: 0.10
+  memory_prob: 0.20
+  captions_prob: 0.60 # SYS / DIA / PUL / mmHg texts, heart icon, battery
+
+# Values shown by the display (design section 3.2): the model learns glyphs, not semantics.
+values:
+  normal: 0.50
+  extreme: 0.30
+  random: 0.20
+
+# Photographic scene (REQ-B003-07).
+scene:
+  display_fraction: [0.40, 0.95] # width of the display / width of the crop
+  display_fraction_skew: 0.7 # u ** skew: below 1 favours larger displays (the app guides the user to fill the ROI)
+  yaw_deg: 25.0
+  pitch_deg: 25.0
+  roll_deg: 8.0
+  shift: 0.10 # random displacement of the display centre, as a fraction of the crop
+  supersample: 2
+
+# Photometric augmentations: probability and range of each (design section 3.3).
+augment:
+  glare_prob: 0.35
+  glare_alpha: [0.2, 0.9]
+  shadow_prob: 0.30
+  gamma: [0.5, 1.8]
+  white_balance: 0.12 # max per-channel gain deviation
+  motion_blur_prob: 0.20
+  motion_blur_kernel: [3, 9]
+  gaussian_blur_prob: 0.25
+  gaussian_blur_sigma: [0.5, 1.6]
+  noise_prob: 0.80
+  noise_sigma: [0.0, 8.0]
+  shot_noise: 0.5
+  rescale_prob: 0.5 # downscale to the ROI resolution of the app and back
+  rescale_range: [0.45, 1.0]
+
+# Size of the dataset `tensoscan-ml synth` writes by default (design section 3.3).
+dataset:
+  train: 30000
+  val: 3000
+  test: 0

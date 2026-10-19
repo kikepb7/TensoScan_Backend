@@ -18,18 +18,27 @@
     `TOO_OLD` solo se evalúan si se pasa `measured_at`.
 
 ## Fase 2 — Datos sintéticos
-- [ ] **T-B003-03 · Render de glifos de 7 segmentos**
+- [x] **T-B003-03 · Render de glifos de 7 segmentos**
   - Tests geométricos: segmentos por clase y caja frente a máscara con IoU ≥ 0,9.
   - Req.: REQ-B003-05 · DoD: CA-B003-02.
-- [ ] **T-B003-04 · Plantillas de layout + elementos auxiliares + escritor YOLO y metadatos**
+  - Nota de implementación: el margen de la etiqueta es el 2 % por lado de cada dimensión de la caja (4 % en total,
+    no «+4 % de H» en absoluto): con un margen absoluto el IoU ≥ 0,9 es imposible para el dígito `1`, que es muy
+    estrecho. Los segmentos usan juntas en inglete (el `1` mide lo mismo que el `8`, como en los casos dorados).
+- [x] **T-B003-04 · Plantillas de layout + elementos auxiliares + escritor YOLO y metadatos**
   - Test: el parser oficial aplicado sobre las etiquetas exactas de cada imagen sintética de una
     plantilla cubierta reproduce los valores renderizados. Así el generador y el parser son
     coherentes entre sí.
   - Req.: REQ-B003-06, 08.
-- [ ] **T-B003-05 · Escena y aumentos + CLI `synth` con semilla**
+  - Nota de implementación: el test de coherencia se cumple al 100 % con escenas sin perspectiva, tamaño legible y
+    fuentes «compatibles con el parser». Con fuentes ordinarias el parser de la especificación no une un `1` a su
+    vecino izquierdo (hallazgo F1 del README); con perspectiva y rotación quedan casos límite (F2). Ambos están
+    documentados y probados en `tests/test_synth_layouts.py`; no se ha tocado el contrato.
+- [x] **T-B003-05 · Escena y aumentos + CLI `synth` con semilla**
   - Req.: REQ-B003-07, 08 · DoD: CA-B003-01.
   - Entregable: una galería de 50 muestras (`docs/synth-samples.png`) para revisarla con el
     usuario.
+  - Nota de implementación: `ml/docs/synth-samples.png` (893 KiB) se genera con
+    `tensoscan-ml synth --gallery docs/synth-samples.png`.
 
 ## Fase 3 — Datos reales
 - [ ] **T-B003-06 · Ingesta (`naming`, `ingest`, `split`) + documento del protocolo**
