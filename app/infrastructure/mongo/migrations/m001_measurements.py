@@ -18,8 +18,6 @@ import argparse
 import asyncio
 import json
 import logging
-import math
-import re
 import sys
 import uuid
 from collections.abc import AsyncIterator, Sequence
@@ -32,6 +30,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from bson import ObjectId
 
 from app.core.config import Settings
+from app.domain.measurements.legacy import LEGACY_MODEL_VERSION, legacy_confidence, parse_legacy_integer
 from app.domain.measurements.model import Measurement, RecognitionInfo
 from app.domain.measurements.rules import ReadingRules
 from app.infrastructure.mongo.client import Database, create_client
@@ -45,10 +44,8 @@ NAMESPACE_TENSOSCAN = uuid.UUID("62300507-fe11-4834-a79f-d5f2ab79dde9")
 MIGRATION_ID = "m001"
 LEGACY_COLLECTION = "recognition_results"
 REPORTS_COLLECTION = "migration_reports"
-LEGACY_MODEL_VERSION = "legacy-keras"
 DEFAULT_LEGACY_TZ = "Europe/Madrid"
 
-_DIGITS = re.compile(r"\d{1,4}")
 _LEGACY_FIELDS = (("high_pressure", "systolic"), ("low_pressure", "diastolic"), ("pulse", "pulse"))
 
 LocalTimeIssue = Literal["ambiguous", "nonexistent"]
@@ -99,16 +96,6 @@ class MigrationReport:
         }
 
 
-def _parse_digits(value: object) -> int | None:
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int):
-        return value
-    if isinstance(value, str) and _DIGITS.fullmatch(value.strip()):
-        return int(value.strip())
-    return None
-
-
 def _wall_clock(value: object) -> datetime | LocalizedTime | None:
     """The naive local time of a legacy ``timestamp``; a string carrying its own offset is already an instant."""
     if isinstance(value, datetime):
@@ -120,13 +107,6 @@ def _wall_clock(value: object) -> datetime | LocalizedTime | None:
             return None
         return LocalizedTime(parsed.astimezone(UTC), None) if parsed.tzinfo else parsed
     return None
-
-
-def _confidence(result: dict[str, Any]) -> float:
-    value = result.get("confidence")
-    if isinstance(value, (int, float)) and not isinstance(value, bool) and not math.isnan(value):
-        return min(1.0, max(0.0, float(value)))
-    return 1.0
 
 
 @dataclass(frozen=True)
@@ -147,7 +127,7 @@ def convert_legacy_document(document: dict[str, Any], zone: ZoneInfo) -> _Conver
         return "MISSING_RESULT"
     values: dict[str, int] = {}
     for legacy_name, name in _LEGACY_FIELDS:
-        parsed = _parse_digits(result.get(legacy_name))
+        parsed = parse_legacy_integer(result.get(legacy_name))
         if parsed is None:
             return f"NOT_NUMERIC:{legacy_name}"
         values[name] = parsed
@@ -167,7 +147,7 @@ def convert_legacy_document(document: dict[str, Any], zone: ZoneInfo) -> _Conver
         measured_at=measured_at,
         created_at=measured_at,
         source="camera",
-        recognition=RecognitionInfo(_confidence(result), LEGACY_MODEL_VERSION, frozenset()),
+        recognition=RecognitionInfo(legacy_confidence(result.get("confidence")), LEGACY_MODEL_VERSION, frozenset()),
     )
     return _Converted(measurement, localized.issue)
 

@@ -20,7 +20,7 @@
   - Req.: REQ-B002-08…10 · Hallazgos: AUD-B-21, 22, 23 · DoD: CA-B002-08.
 - [x] **T-B002-06 · Script de migración m001 + tests** (incluye los casos de cambio de hora)
   - Req.: REQ-B002-11 · DoD: CA-B002-09.
-- [ ] **T-B002-07 · Rutas legacy de mediciones sobre la nueva colección + log de uso**
+- [x] **T-B002-07 · Rutas legacy de mediciones sobre la nueva colección + log de uso**
   - Req.: REQ-B002-12, 14 · DoD: CA-B002-10.
 - [ ] **T-B002-08 · Copiar a la app el contrato `api-v1.md` (versión final) y avisar a A-002 fase D**
   - Incluye ejemplos de petición y respuesta reales generados por los tests (fixtures JSON en

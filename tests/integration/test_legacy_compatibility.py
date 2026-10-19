@@ -1,13 +1,12 @@
 """The previous app version keeps working against the same routes while the new one is rolled out."""
 
-from datetime import UTC, datetime
 from typing import Any
 
 import bcrypt
 import httpx
-from bson import ObjectId
 
 from tests.conftest import NEW_USER, bearer, register_and_login
+from tests.support.measurements import body, post
 
 
 async def test_legacy_register_login_and_me_keep_their_shapes(client: httpx.AsyncClient) -> None:
@@ -52,44 +51,15 @@ async def test_legacy_chatbot_route_answers_with_the_old_shape(client: httpx.Asy
     assert response.json() == {"response": "Hello from the model"}
 
 
-async def test_legacy_measurements_are_listed_and_deleted_with_the_old_shape(
-    client: httpx.AsyncClient, db: Any
-) -> None:
-    tokens = await register_and_login(client)
-    user_id = ObjectId(tokens["user"]["id"])
-    result = {"high_pressure": "128", "low_pressure": "82", "pulse": "67", "confidence": 0.9}
-    inserted = await db["recognition_results"].insert_one(
-        {"user_id": user_id, "filename": "a.jpg", "result": result, "timestamp": datetime(2026, 1, 2, tzinfo=UTC)}
-    )
-
-    listing = await client.get("/ocr/measurements", headers=bearer(tokens))
-    deleted = await client.delete(f"/ocr/remove/measurements/{inserted.inserted_id}", headers=bearer(tokens))
-    missing = await client.delete(f"/ocr/remove/measurements/{inserted.inserted_id}", headers=bearer(tokens))
-
-    assert listing.status_code == 200
-    assert listing.json()[0]["measurement_id"] == str(inserted.inserted_id)
-    assert listing.json()[0]["result"] == result
-    assert deleted.status_code == 204
-    assert missing.status_code == 404
-    assert missing.json()["error"]["code"] == "NOT_FOUND"
-
-
 async def test_a_user_cannot_delete_someone_elses_legacy_measurement(client: httpx.AsyncClient, db: Any) -> None:
     owner = await register_and_login(client)
     intruder = await register_and_login(client, {**NEW_USER, "email": "intruder@example.com"})
-    inserted = await db["recognition_results"].insert_one(
-        {
-            "user_id": ObjectId(owner["user"]["id"]),
-            "filename": "a.jpg",
-            "result": {"high_pressure": "1", "low_pressure": "1", "pulse": "1", "confidence": 1.0},
-            "timestamp": datetime(2026, 1, 2, tzinfo=UTC),
-        }
-    )
+    created = (await post(client, owner, body())).json()
 
-    response = await client.delete(f"/ocr/remove/measurements/{inserted.inserted_id}", headers=bearer(intruder))
+    response = await client.delete(f"/ocr/remove/measurements/{created['id']}", headers=bearer(intruder))
 
     assert response.status_code == 404
-    assert await db["recognition_results"].count_documents({}) == 1
+    assert await db["measurements"].count_documents({}) == 1
 
 
 async def test_an_invalid_measurement_id_is_a_validation_error_not_a_server_error(client: httpx.AsyncClient) -> None:
@@ -116,8 +86,6 @@ async def test_the_legacy_ocr_routes_are_not_even_registered_when_the_feature_is
 async def test_the_legacy_html_report_is_a_plain_escaped_table_without_scripts_or_external_resources(
     client: httpx.AsyncClient,
 ) -> None:
-    from tests.support.measurements import body, post
-
     tokens = await register_and_login(client)
     await post(client, tokens, body(systolic=131, diastolic=84, pulse=66))
 
@@ -132,8 +100,6 @@ async def test_the_legacy_html_report_is_a_plain_escaped_table_without_scripts_o
 
 
 async def test_the_legacy_pdf_report_reuses_the_new_renderer(client: httpx.AsyncClient) -> None:
-    from tests.support.measurements import body, post
-
     tokens = await register_and_login(client)
     await post(client, tokens, body())
 

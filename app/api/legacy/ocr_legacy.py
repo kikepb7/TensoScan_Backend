@@ -6,22 +6,25 @@ stops the API from starting. Images are processed in memory and never written to
 
 import logging
 import threading
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from bson import ObjectId
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
 from app.api.deps import ContainerDep, CurrentUser
 from app.api.legacy.headers import deprecated
+from app.api.legacy.usage import record_legacy_usage
 from app.domain.errors import FieldIssue, UpstreamUnavailable, ValidationFailed
 
 logger = logging.getLogger(__name__)
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
-router = APIRouter(prefix="/ocr", tags=["legacy"], dependencies=[Depends(deprecated("/v1/measurements"))])
+router = APIRouter(
+    prefix="/ocr",
+    tags=["legacy"],
+    dependencies=[Depends(deprecated("/v1/measurements")), Depends(record_legacy_usage)],
+)
 
 
 class LegacyOcr:
@@ -91,12 +94,12 @@ async def display_recognize(
 ) -> dict[str, Any]:
     content = await _read_image(image)
     result = await run_in_threadpool(_ocr(container).recognize_display, content)
-    await container.db["recognition_results"].insert_one(
-        {
-            "user_id": ObjectId(user.id),
-            "filename": image.filename or "",
-            "result": result,
-            "timestamp": datetime.now(UTC),
-        }
+    # Stored in the new collection, skipping the range validation (documented exception, see the use case).
+    await container.record_legacy_recognition.execute(
+        user_id=user.id,
+        high_pressure=result.get("high_pressure"),
+        low_pressure=result.get("low_pressure"),
+        pulse=result.get("pulse"),
+        confidence=result.get("confidence"),
     )
     return result

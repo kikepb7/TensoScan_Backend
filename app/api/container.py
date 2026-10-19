@@ -19,6 +19,7 @@ from app.application.measurements.delete_measurement import DeleteMeasurement
 from app.application.measurements.erase_measurements import EraseAllMeasurements
 from app.application.measurements.generate_report import GenerateMeasurementsReport
 from app.application.measurements.list_measurements import ListAllMeasurements, ListMeasurements
+from app.application.measurements.record_legacy_recognition import RecordLegacyRecognition
 from app.core.config import Settings
 from app.core.rate_limit import RateLimiter
 from app.domain.clock import SystemClock
@@ -65,6 +66,7 @@ class Container:
     list_all_measurements: ListAllMeasurements
     delete_measurement: DeleteMeasurement
     generate_report: GenerateMeasurementsReport
+    record_legacy_recognition: RecordLegacyRecognition
     legacy_ocr: Any = None
 
 
@@ -112,6 +114,7 @@ def build_container(
         list_measurements=ListMeasurements(measurements),
         list_all_measurements=ListAllMeasurements(measurements),
         delete_measurement=DeleteMeasurement(measurements),
+        record_legacy_recognition=RecordLegacyRecognition(measurements, clock),
         generate_report=GenerateMeasurementsReport(
             measurements, ReportLabReportRenderer(), clock, settings.default_report_tz
         ),

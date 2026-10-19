@@ -7,13 +7,16 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.deps import ContainerDep, CurrentUser, client_ip
 from app.api.legacy.headers import deprecated
+from app.api.legacy.usage import record_anonymous_legacy_usage, record_legacy_usage
 from app.api.schemas.auth import RegisterRequest, TokenResponse, UserResponse
 from app.domain.user import normalize_email
 
 router = APIRouter(tags=["legacy"])
 
 
-@router.post("/register", dependencies=[Depends(deprecated("/v1/auth/register"))])
+@router.post(
+    "/register", dependencies=[Depends(deprecated("/v1/auth/register")), Depends(record_anonymous_legacy_usage)]
+)
 async def register(body: RegisterRequest, request: Request, container: ContainerDep) -> dict[str, str]:
     container.limiters.register.check(client_ip(request))
     await container.register_user.execute(
@@ -23,7 +26,11 @@ async def register(body: RegisterRequest, request: Request, container: Container
     return {"msg:": "User registered successfully"}
 
 
-@router.post("/login", response_model=TokenResponse, dependencies=[Depends(deprecated("/v1/auth/login"))])
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    dependencies=[Depends(deprecated("/v1/auth/login")), Depends(record_anonymous_legacy_usage)],
+)
 async def login(
     form: Annotated[OAuth2PasswordRequestForm, Depends()],
     request: Request,
@@ -35,6 +42,8 @@ async def login(
     return TokenResponse.from_domain(pair)
 
 
-@router.get("/me", response_model=UserResponse, dependencies=[Depends(deprecated("/v1/users/me"))])
+@router.get(
+    "/me", response_model=UserResponse, dependencies=[Depends(deprecated("/v1/users/me")), Depends(record_legacy_usage)]
+)
 async def read_me(user: CurrentUser) -> UserResponse:
     return UserResponse.from_domain(user)
