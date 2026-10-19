@@ -1,0 +1,1218 @@
+{
+ "contract_version": "1.0.0",
+ "parser_cases": [
+  {
+   "name": "stacked_three_rows_small_pulse",
+   "description": "Omron-like: SYS y DIA grandes apilados, PUL pequeño abajo a la derecha",
+   "detections": [
+    {
+     "symbol": "1",
+     "box": [
+      0.3,
+      0.08,
+      0.375,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.411,
+      0.08,
+      0.576,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.612,
+      0.08,
+      0.777,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.42,
+      0.42,
+      0.585,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.621,
+      0.42,
+      0.786,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "6",
+     "box": [
+      0.62,
+      0.8,
+      0.697,
+      0.94
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "7",
+     "box": [
+      0.7138,
+      0.8,
+      0.7908,
+      0.94
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "COMPLETE",
+    "systolic": 128,
+    "diastolic": 82,
+    "pulse": 67
+   }
+  },
+  {
+   "name": "stacked_three_rows_equal_height",
+   "description": "Tres filas de igual altura",
+   "detections": [
+    {
+     "symbol": "1",
+     "box": [
+      0.25,
+      0.05,
+      0.3125,
+      0.3
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "3",
+     "box": [
+      0.3425,
+      0.05,
+      0.48,
+      0.3
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "5",
+     "box": [
+      0.51,
+      0.05,
+      0.6475,
+      0.3
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.38,
+      0.37,
+      0.5175,
+      0.62
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.5475,
+      0.37,
+      0.685,
+      0.62
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "7",
+     "box": [
+      0.38,
+      0.69,
+      0.5175,
+      0.94
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.5475,
+      0.69,
+      0.685,
+      0.94
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "COMPLETE",
+    "systolic": 135,
+    "diastolic": 88,
+    "pulse": 72
+   }
+  },
+  {
+   "name": "side_by_side_sys_dia_pulse_below",
+   "description": "SYS | DIA en la misma fila, PUL debajo",
+   "detections": [
+    {
+     "symbol": "1",
+     "box": [
+      0.05,
+      0.1,
+      0.125,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "1",
+     "box": [
+      0.161,
+      0.1,
+      0.236,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.272,
+      0.1,
+      0.437,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "7",
+     "box": [
+      0.62,
+      0.1,
+      0.785,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "6",
+     "box": [
+      0.821,
+      0.1,
+      0.986,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "6",
+     "box": [
+      0.4,
+      0.7,
+      0.4825,
+      0.85
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "4",
+     "box": [
+      0.5005,
+      0.7,
+      0.583,
+      0.85
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "COMPLETE",
+    "systolic": 118,
+    "diastolic": 76,
+    "pulse": 64
+   }
+  },
+  {
+   "name": "two_digit_systolic",
+   "description": "Sistólica de dos dígitos (95) sin dígito vacío",
+   "detections": [
+    {
+     "symbol": "9",
+     "box": [
+      0.4,
+      0.08,
+      0.565,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "5",
+     "box": [
+      0.601,
+      0.08,
+      0.766,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "6",
+     "box": [
+      0.4,
+      0.42,
+      0.565,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "1",
+     "box": [
+      0.601,
+      0.42,
+      0.676,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "5",
+     "box": [
+      0.62,
+      0.8,
+      0.697,
+      0.94
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.7138,
+      0.8,
+      0.7908,
+      0.94
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "COMPLETE",
+    "systolic": 95,
+    "diastolic": 61,
+    "pulse": 58
+   }
+  },
+  {
+   "name": "three_digit_pulse",
+   "description": "Pulso de tres dígitos",
+   "detections": [
+    {
+     "symbol": "1",
+     "box": [
+      0.3,
+      0.08,
+      0.375,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "4",
+     "box": [
+      0.411,
+      0.08,
+      0.576,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.612,
+      0.08,
+      0.777,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "9",
+     "box": [
+      0.42,
+      0.42,
+      0.585,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "1",
+     "box": [
+      0.621,
+      0.42,
+      0.696,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "1",
+     "box": [
+      0.58,
+      0.8,
+      0.615,
+      0.94
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "0",
+     "box": [
+      0.6318,
+      0.8,
+      0.7088,
+      0.94
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "4",
+     "box": [
+      0.7256,
+      0.8,
+      0.8026,
+      0.94
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "COMPLETE",
+    "systolic": 142,
+    "diastolic": 91,
+    "pulse": 104
+   }
+  },
+  {
+   "name": "clock_is_ignored",
+   "description": "La hora (con ':') arriba a la izquierda no se confunde con un valor",
+   "detections": [
+    {
+     "symbol": "1",
+     "box": [
+      0.02,
+      0.01,
+      0.04,
+      0.09
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "0",
+     "box": [
+      0.0496,
+      0.01,
+      0.0936,
+      0.09
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": ":",
+     "box": [
+      0.1032,
+      0.01,
+      0.1472,
+      0.09
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "4",
+     "box": [
+      0.1568,
+      0.01,
+      0.2008,
+      0.09
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "5",
+     "box": [
+      0.2104,
+      0.01,
+      0.2544,
+      0.09
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "1",
+     "box": [
+      0.3,
+      0.12,
+      0.37,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.4036,
+      0.12,
+      0.5576,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.5912,
+      0.12,
+      0.7452,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.42,
+      0.45,
+      0.574,
+      0.73
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.6076,
+      0.45,
+      0.7616,
+      0.73
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "6",
+     "box": [
+      0.62,
+      0.8,
+      0.697,
+      0.94
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "7",
+     "box": [
+      0.7138,
+      0.8,
+      0.7908,
+      0.94
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "COMPLETE",
+    "systolic": 128,
+    "diastolic": 82,
+    "pulse": 67
+   }
+  },
+  {
+   "name": "tiny_date_is_ignored",
+   "description": "La fecha muy pequeña (< 35% de la altura principal) se ignora",
+   "detections": [
+    {
+     "symbol": "1",
+     "box": [
+      0.02,
+      0.01,
+      0.0375,
+      0.08
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "0",
+     "box": [
+      0.0459,
+      0.01,
+      0.0844,
+      0.08
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "1",
+     "box": [
+      0.2,
+      0.01,
+      0.2175,
+      0.08
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "9",
+     "box": [
+      0.2259,
+      0.01,
+      0.2644,
+      0.08
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "1",
+     "box": [
+      0.3,
+      0.12,
+      0.37,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.4036,
+      0.12,
+      0.5576,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.5912,
+      0.12,
+      0.7452,
+      0.4
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.42,
+      0.45,
+      0.574,
+      0.73
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.6076,
+      0.45,
+      0.7616,
+      0.73
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "6",
+     "box": [
+      0.62,
+      0.8,
+      0.697,
+      0.94
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "7",
+     "box": [
+      0.7138,
+      0.8,
+      0.7908,
+      0.94
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "COMPLETE",
+    "systolic": 128,
+    "diastolic": 82,
+    "pulse": 67
+   }
+  },
+  {
+   "name": "memory_index_single_digit_ignored",
+   "description": "Índice de memoria de un solo dígito se ignora",
+   "detections": [
+    {
+     "symbol": "3",
+     "box": [
+      0.02,
+      0.85,
+      0.086,
+      0.97
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "1",
+     "box": [
+      0.3,
+      0.08,
+      0.375,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.411,
+      0.08,
+      0.576,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.612,
+      0.08,
+      0.777,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.42,
+      0.42,
+      0.585,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.621,
+      0.42,
+      0.786,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "6",
+     "box": [
+      0.62,
+      0.8,
+      0.697,
+      0.94
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "7",
+     "box": [
+      0.7138,
+      0.8,
+      0.7908,
+      0.94
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "COMPLETE",
+    "systolic": 128,
+    "diastolic": 82,
+    "pulse": 67
+   }
+  },
+  {
+   "name": "pulse_missing_is_partial",
+   "description": "Sin pulso visible: lectura parcial",
+   "detections": [
+    {
+     "symbol": "1",
+     "box": [
+      0.3,
+      0.08,
+      0.375,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.411,
+      0.08,
+      0.576,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.612,
+      0.08,
+      0.777,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.42,
+      0.42,
+      0.585,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.621,
+      0.42,
+      0.786,
+      0.72
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "PARTIAL",
+    "systolic": 128,
+    "diastolic": 82,
+    "pulse": null
+   }
+  },
+  {
+   "name": "only_one_number_is_no_reading",
+   "description": "Un solo número grande no basta",
+   "detections": [
+    {
+     "symbol": "1",
+     "box": [
+      0.3,
+      0.3,
+      0.375,
+      0.6
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.411,
+      0.3,
+      0.576,
+      0.6
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.612,
+      0.3,
+      0.777,
+      0.6
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "NO_READING",
+    "systolic": null,
+    "diastolic": null,
+    "pulse": null
+   }
+  },
+  {
+   "name": "low_confidence_symbols_filtered",
+   "description": "Símbolos con confianza < 0.40 se descartan (aquí desaparece el pulso)",
+   "detections": [
+    {
+     "symbol": "1",
+     "box": [
+      0.3,
+      0.08,
+      0.375,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.411,
+      0.08,
+      0.576,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.612,
+      0.08,
+      0.777,
+      0.38
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "8",
+     "box": [
+      0.42,
+      0.42,
+      0.585,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "2",
+     "box": [
+      0.621,
+      0.42,
+      0.786,
+      0.72
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "6",
+     "box": [
+      0.62,
+      0.8,
+      0.697,
+      0.94
+     ],
+     "confidence": 0.3
+    },
+    {
+     "symbol": "7",
+     "box": [
+      0.7138,
+      0.8,
+      0.7908,
+      0.94
+     ],
+     "confidence": 0.3
+    }
+   ],
+   "expected": {
+    "status": "PARTIAL",
+    "systolic": 128,
+    "diastolic": 82,
+    "pulse": null
+   }
+  },
+  {
+   "name": "device_error_code",
+   "description": "Código de error 'E1' en pantalla",
+   "detections": [
+    {
+     "symbol": "E",
+     "box": [
+      0.3,
+      0.3,
+      0.465,
+      0.6
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "1",
+     "box": [
+      0.501,
+      0.3,
+      0.576,
+      0.6
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "DEVICE_ERROR",
+    "systolic": null,
+    "diastolic": null,
+    "pulse": null
+   }
+  },
+  {
+   "name": "measuring_dashes",
+   "description": "'---' mientras el tensiómetro mide",
+   "detections": [
+    {
+     "symbol": "dash",
+     "box": [
+      0.3,
+      0.3,
+      0.465,
+      0.6
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "dash",
+     "box": [
+      0.501,
+      0.3,
+      0.666,
+      0.6
+     ],
+     "confidence": 0.9
+    },
+    {
+     "symbol": "dash",
+     "box": [
+      0.702,
+      0.3,
+      0.867,
+      0.6
+     ],
+     "confidence": 0.9
+    }
+   ],
+   "expected": {
+    "status": "MEASURING",
+    "systolic": null,
+    "diastolic": null,
+    "pulse": null
+   }
+  },
+  {
+   "name": "empty_frame",
+   "description": "Sin detecciones",
+   "detections": [],
+   "expected": {
+    "status": "NO_READING",
+    "systolic": null,
+    "diastolic": null,
+    "pulse": null
+   }
+  }
+ ],
+ "validation_cases": [
+  {
+   "name": "valid_normal",
+   "input": {
+    "systolic": 128,
+    "diastolic": 82,
+    "pulse": 67
+   },
+   "errors": [],
+   "warnings": []
+  },
+  {
+   "name": "missing_pulse",
+   "input": {
+    "systolic": 128,
+    "diastolic": 82,
+    "pulse": null
+   },
+   "errors": [
+    {
+     "field": "pulse",
+     "code": "REQUIRED"
+    }
+   ],
+   "warnings": []
+  },
+  {
+   "name": "systolic_out_of_range_high",
+   "input": {
+    "systolic": 300,
+    "diastolic": 82,
+    "pulse": 67
+   },
+   "errors": [
+    {
+     "field": "systolic",
+     "code": "OUT_OF_RANGE"
+    }
+   ],
+   "warnings": []
+  },
+  {
+   "name": "diastolic_out_of_range_low",
+   "input": {
+    "systolic": 100,
+    "diastolic": 20,
+    "pulse": 67
+   },
+   "errors": [
+    {
+     "field": "diastolic",
+     "code": "OUT_OF_RANGE"
+    }
+   ],
+   "warnings": []
+  },
+  {
+   "name": "pulse_out_of_range",
+   "input": {
+    "systolic": 120,
+    "diastolic": 80,
+    "pulse": 250
+   },
+   "errors": [
+    {
+     "field": "pulse",
+     "code": "OUT_OF_RANGE"
+    }
+   ],
+   "warnings": []
+  },
+  {
+   "name": "systolic_not_greater",
+   "input": {
+    "systolic": 80,
+    "diastolic": 82,
+    "pulse": 67
+   },
+   "errors": [
+    {
+     "field": "systolic",
+     "code": "SYSTOLIC_NOT_GREATER_THAN_DIASTOLIC"
+    }
+   ],
+   "warnings": []
+  },
+  {
+   "name": "crisis_range",
+   "input": {
+    "systolic": 185,
+    "diastolic": 100,
+    "pulse": 80
+   },
+   "errors": [],
+   "warnings": [
+    "VERY_HIGH_PRESSURE"
+   ]
+  },
+  {
+   "name": "crisis_range_diastolic",
+   "input": {
+    "systolic": 170,
+    "diastolic": 121,
+    "pulse": 80
+   },
+   "errors": [],
+   "warnings": [
+    "VERY_HIGH_PRESSURE"
+   ]
+  },
+  {
+   "name": "low_pressure",
+   "input": {
+    "systolic": 88,
+    "diastolic": 55,
+    "pulse": 70
+   },
+   "errors": [],
+   "warnings": [
+    "LOW_PRESSURE"
+   ]
+  },
+  {
+   "name": "unusual_pulse_low",
+   "input": {
+    "systolic": 120,
+    "diastolic": 80,
+    "pulse": 38
+   },
+   "errors": [],
+   "warnings": [
+    "UNUSUAL_PULSE"
+   ]
+  },
+  {
+   "name": "narrow_pulse_pressure",
+   "input": {
+    "systolic": 100,
+    "diastolic": 90,
+    "pulse": 70
+   },
+   "errors": [],
+   "warnings": [
+    "UNUSUAL_PULSE_PRESSURE"
+   ]
+  },
+  {
+   "name": "wide_pulse_pressure_and_very_high",
+   "input": {
+    "systolic": 230,
+    "diastolic": 110,
+    "pulse": 70
+   },
+   "errors": [],
+   "warnings": [
+    "VERY_HIGH_PRESSURE",
+    "UNUSUAL_PULSE_PRESSURE"
+   ]
+  },
+  {
+   "name": "boundaries_inclusive",
+   "input": {
+    "systolic": 60,
+    "diastolic": 30,
+    "pulse": 30
+   },
+   "errors": [],
+   "warnings": [
+    "LOW_PRESSURE",
+    "UNUSUAL_PULSE"
+   ]
+  },
+  {
+   "name": "upper_boundaries_inclusive",
+   "input": {
+    "systolic": 260,
+    "diastolic": 160,
+    "pulse": 220
+   },
+   "errors": [],
+   "warnings": [
+    "VERY_HIGH_PRESSURE",
+    "UNUSUAL_PULSE"
+   ]
+  }
+ ]
+}
