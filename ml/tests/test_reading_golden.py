@@ -26,7 +26,7 @@ _VALIDATION_CASES = [case for case in _GOLDEN["validation_cases"] if not case.ge
 
 def test_golden_file_is_the_expected_contract_version_and_is_not_empty() -> None:
     assert _GOLDEN["contract_version"].startswith("1.")
-    assert len(_PARSER_CASES) >= 14
+    assert len(_PARSER_CASES) >= 21
     assert len(_VALIDATION_CASES) >= 14
 
 
@@ -35,7 +35,7 @@ def test_parser_reproduces_the_golden_case(case: dict[str, Any]) -> None:
     detections = [SymbolDetection.from_dict(raw) for raw in case["detections"]]
     expected = case["expected"]
 
-    actual = parse_detections(detections)
+    actual = parse_detections(detections, roi_aspect=case.get("roi_aspect", 0.8))
 
     assert actual.status.value == expected["status"]
     assert actual.values == (expected["systolic"], expected["diastolic"], expected["pulse"])
@@ -114,3 +114,43 @@ def test_validator_dates_are_checked_only_when_saving() -> None:
 def test_validator_rejects_naive_datetimes() -> None:
     with pytest.raises(ValueError, match="timezone-aware"):
         validate_reading(128, 82, 67, measured_at=datetime(2026, 1, 1))  # noqa: DTZ001
+
+
+def _digits(*items: tuple[str, float, float, float, float]) -> list[SymbolDetection]:
+    return [SymbolDetection(symbol, Box(left, top, right, bottom), 0.9) for symbol, left, top, right, bottom in items]
+
+
+def test_a_non_positive_roi_aspect_is_rejected() -> None:
+    with pytest.raises(ValueError, match="roi_aspect"):
+        parse_detections([], roi_aspect=0.0)
+
+
+def test_an_evenly_spaced_run_of_four_digits_is_ignored_and_not_split() -> None:
+    four = _digits(
+        ("2", 0.20, 0.1, 0.30, 0.3),
+        ("0", 0.33, 0.1, 0.43, 0.3),
+        ("2", 0.46, 0.1, 0.56, 0.3),
+        ("6", 0.59, 0.1, 0.69, 0.3),
+    )
+
+    assert parse_detections(four).status is FrameStatus.NO_READING
+
+
+def test_two_dashes_are_measuring_even_when_far_apart_and_flat() -> None:
+    dashes = _digits(("dash", 0.20, 0.50, 0.25, 0.52), ("dash", 0.45, 0.50, 0.50, 0.52))
+
+    assert parse_detections(dashes).status is FrameStatus.MEASURING
+
+
+def test_numbers_win_over_stray_dashes() -> None:
+    reading = _digits(
+        ("1", 0.30, 0.10, 0.375, 0.38),
+        ("2", 0.41, 0.10, 0.575, 0.38),
+        ("0", 0.61, 0.10, 0.775, 0.38),
+        ("8", 0.42, 0.42, 0.585, 0.72),
+        ("0", 0.62, 0.42, 0.785, 0.72),
+        ("dash", 0.05, 0.9, 0.09, 0.91),
+        ("dash", 0.12, 0.9, 0.16, 0.91),
+    )
+
+    assert parse_detections(reading).status is FrameStatus.PARTIAL

@@ -137,26 +137,20 @@ Regenerar: `uv run tensoscan-ml dummy-model` (determinista: el mismo sha256).
 
 ## 5. Hallazgos para el contrato (no se ha modificado ningún contrato)
 
-**F1 · El parser compartido no une un «1» a su vecino izquierdo con fuentes normales.** El hueco entre un dígito y un `1`
-que le sigue es `ancho_celda + separación − grosor_del_trazo` (el `1` solo ocupa los segmentos de la derecha de su celda).
-Con una fuente ordinaria (ancho 0,50·H, trazo 0,15·H, separación 0,12·H) eso es ≈ 0,47·H, y `GROUP_MAX_GAP_FACTOR` permite
-0,35 de la altura **en coordenadas normalizadas a la ROI**, es decir 0,35 × (ancho/alto) = 0,28·H en píxeles para una ROI
-4:5. Resultado medido con las cajas exactas, sin ruido: **solo el 54 % de las lecturas normales** (SYS 100–139, DIA 60–89,
-PUL 55–95) se reconstruyen, y el 46 % restante son exactamente las que llevan un `1` después del primer dígito de un número
-(`121`, `81`, `71`...). Ningún caso dorado lo cubre (todos sus `1` van primero). Los glifos `3` y `7` tras otro dígito tienen
-el mismo problema en menor grado. **Propuesta probada**: para un `1`, relajar solo la cota superior del hueco con el ancho
-de su celda virtual (`allowance = max(0, 0,55·h/aspecto − ancho)`); pasa los 14 casos dorados y reconstruye el 100 % de las
-lecturas con las tres fuentes probadas. Requiere subir la versión del contrato y regenerar los casos. El generador marca
-cada fuente como compatible o no (`parser_compatible` en `meta.jsonl`) y los tests documentan el comportamiento actual.
+**F1 · Un «1» no se unía a su vecino izquierdo (resuelto en el contrato 1.1.0).** El hueco entre un dígito y un `1` que le
+sigue es `ancho_celda + separación − grosor_del_trazo` (≈ 0,47·H con una fuente ordinaria) y el límite era 0,35 de la altura
+**normalizada a la ROI** (0,28·H en píxeles en una ROI 4:5): solo el 54 % de las lecturas normales se reconstruían. El
+contrato añade un permiso para el hueco previo a un «1» (`ONE_CELL_FACTOR`) que depende de la proporción de la ROI
+(`roi_aspect`, 0,8 por defecto) y un paso que parte las tandas de 4 a 6 dígitos cuando dos números contiguos quedan
+encadenados. Con el generador sintético: fuentes compatibles 86 % → 99,6 %, todas las fuentes 65 % → 82 % (el resto son
+fuentes extremas), 0 falsos positivos sobre pantallas sin lectura.
 
-**F2 · Rotación y perspectiva.** Con rotaciones de ±8° las cajas alineadas a ejes de un `1` (alto y estrecho) se solapan con
-las del dígito vecino más de lo que tolera `GROUP_MAX_OVERLAP_FACTOR` (0,30 × el ancho menor). Con fuentes compatibles y
-perspectiva/rotación completas el parser reproduce ~86–98 % de las lecturas legibles, frente al 100 % sin ellas.
+**F2 · Rotación y perspectiva (resuelto: `GROUP_MAX_OVERLAP_FACTOR` 0,30 → 0,45).** Con ±8° las cajas de un `1` se solapan con
+las del vecino más de lo tolerado. El acierto se estabiliza desde 0,45; valores mayores no mejoran.
 
-**F3 · `:` y `-` en los casos dorados tienen cajas de la altura de un dígito.** Una caja ajustada al guion mide ~0,15 de la
-altura del dígito, por debajo de `MIN_SYMBOL_HEIGHT` (0,04 de la ROI) salvo displays muy grandes, así que `---` se
-reconocería como `NO_READING` en lugar de `MEASURING`. La guía de CVAT pide cajas ajustadas; si se quiere mantener el
-convenio de los casos dorados hay que decidirlo en el contrato.
+**F3 · `:` y `-` con cajas ajustadas (resuelto).** Se mantienen las cajas ajustadas (como en la guía de CVAT) y el parser deja
+de exigirles la altura mínima de un dígito (`MIN_PUNCTUATION_HEIGHT` 0,01). «Midiendo» pasa a ser «al menos 2 guiones» sin
+agruparlos. En pantallas sintéticas `---` se reconoce en el 85 % (antes 5 %); los demás son guiones casi invisibles.
 
 **F4 · Operativo.** `onnx2tf` intenta descargar de GitHub un fichero de muestra de calibración al convertir; el pipeline lo
 crea localmente para funcionar sin red. El escritor TFLite de `torch.onnx.export` clásico está deprecado en PyTorch ≥ 2.9

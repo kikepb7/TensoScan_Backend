@@ -159,15 +159,13 @@ def _parse_flat_numbers(font: DigitFont, values: tuple[int, int, int]) -> tuple[
     return parse_detections(detections).values
 
 
-def test_a_realistic_font_splits_a_one_from_its_left_neighbour_finding_f1() -> None:
-    """Documents a limit of the shared parser (README, finding F1): with an ordinary font the gap to a "1" that follows
-    another digit exceeds 0.35 of the glyph height, so "81" or "121" are not recovered. When the contract changes,
-    this test must change with it."""
+def test_a_realistic_font_keeps_a_one_with_its_left_neighbour() -> None:
+    """Contract 1.1.0 (finding F1): the empty cell in front of a "1" no longer splits "81" or "121" with an ordinary
+    font (stroke 0.15, cell 0.50, spacing 0.12 of the glyph height)."""
     ordinary = DigitFont(GlyphStyle(thickness=0.15, width_ratio=0.5, bevel=1.0), spacing=0.12)
 
-    failures = sum(_parse_flat_numbers(ordinary, values) != values for values in _readings_with_ones())
-
-    assert failures == len(_readings_with_ones())
+    for values in _readings_with_ones():
+        assert _parse_flat_numbers(ordinary, values) == values
 
 
 def test_a_parser_compatible_font_keeps_numbers_with_ones_together() -> None:

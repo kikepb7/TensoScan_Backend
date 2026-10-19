@@ -7,7 +7,7 @@
 > - Backend: validación de `POST /v1/measurements` (spec B-002) y harness de evaluación del
 >   modelo (spec B-003), que **reutiliza el mismo parser** para medir el acierto por lectura.
 >
-> Versión: **1.0.1** · Estado: 📝 Pendiente de aprobación
+> Versión: **1.1.0** · Estado: 📝 Pendiente de aprobación
 
 ## 1. Por qué existe este contrato
 
@@ -65,18 +65,24 @@ Lista de detecciones `{symbol, box: [left, top, right, bottom], confidence}`:
 - `symbol` ∈ `0`…`9`, `colon`, `dash`, `E` y `r` (clases del modelo, ver
   `digit-detector-model.md`);
 - `box` normalizada a la ROI, `[0, 1]`, con el origen arriba a la izquierda;
-- `confidence` ∈ `[0, 1]`.
+- `confidence` ∈ `[0, 1]`;
+- `roi_aspect` (opcional, por defecto `0.8`): proporción `ancho / alto`, **en píxeles**, de la ROI a la
+  que están normalizadas las cajas. Las cajas normalizadas la ocultan y el hueco que deja un «1»
+  (§4.3, paso 2) depende de ella.
 
 ### 4.2 Constantes
 
 | Constante | Valor | Significado |
 |-----------|-------|-------------|
 | `MIN_SYMBOL_CONFIDENCE` | 0.40 | Las detecciones por debajo se descartan |
-| `MIN_SYMBOL_HEIGHT` | 0.04 | Las cajas más bajas (en proporción de la altura de la ROI) se descartan como ruido |
+| `MIN_SYMBOL_HEIGHT` | 0.04 | Los dígitos y letras más bajos (en proporción de la altura de la ROI) se descartan como ruido |
+| `MIN_PUNCTUATION_HEIGHT` | 0.01 | Lo mismo para `dash` y `colon`, que por naturaleza son mucho más bajos que un dígito |
 | `GROUP_MIN_VERTICAL_OVERLAP` | 0.60 | Solape vertical mínimo (sobre la altura menor) para unir dos glifos en un número |
 | `GROUP_MAX_HEIGHT_RATIO` | 1.35 | Relación máxima de alturas para unirlos |
 | `GROUP_MAX_GAP_FACTOR` | 0.35 | Hueco horizontal máximo, en múltiplos de la altura mayor |
-| `GROUP_MAX_OVERLAP_FACTOR` | 0.30 | Solape horizontal máximo tolerado, en múltiplos de la anchura menor |
+| `GROUP_MAX_OVERLAP_FACTOR` | 0.45 | Solape horizontal máximo tolerado, en múltiplos de la anchura menor |
+| `ONE_CELL_FACTOR` | 0.55 | Anchura de la celda de un «1», en múltiplos de su altura (en píxeles); ver el paso 2 |
+| `SPLIT_GAP_RATIO` | 2.0 | Cuántas veces mayor que los demás debe ser un hueco para partir una tanda de 4 a 6 dígitos (paso 2b) |
 | `ROW_MIN_VERTICAL_OVERLAP` | 0.50 | Solape vertical mínimo para que dos números estén en la misma fila |
 | `PRIMARY_MIN_HEIGHT_RATIO` | 0.75 | Altura mínima (frente al número más alto) para ser candidato a SYS o DIA |
 | `SECONDARY_MIN_HEIGHT_RATIO` | 0.35 | Altura mínima para ser candidato a PUL; los números más pequeños (fecha, memoria) se ignoran |
@@ -89,18 +95,28 @@ contrato y regenerar los casos.
 Notación: `h(b) = bottom − top`, `w(b) = right − left`, y
 `vov(a, b) = max(0, min(a.bottom, b.bottom) − max(a.top, b.top)) / min(h(a), h(b))`.
 
-1. **Filtrar** las detecciones con `confidence < MIN_SYMBOL_CONFIDENCE` o `h(box) < MIN_SYMBOL_HEIGHT`.
+1. **Filtrar** las detecciones con `confidence < MIN_SYMBOL_CONFIDENCE` o con una altura inferior a
+   `MIN_SYMBOL_HEIGHT` (`MIN_PUNCTUATION_HEIGHT` si el símbolo es `dash` o `colon`).
 2. **Agrupar en números**: ordenar por `(left, top)` y recorrer. Cada detección `d` se añade al
    grupo existente cuyo **último** elemento `l` cumpla todas estas condiciones:
    - `vov(l, d) >= GROUP_MIN_VERTICAL_OVERLAP`;
    - `max(h)/min(h) <= GROUP_MAX_HEIGHT_RATIO`;
-   - `gap = d.left − l.right` dentro de `[−GROUP_MAX_OVERLAP_FACTOR·min(w), GROUP_MAX_GAP_FACTOR·max(h)]`.
+   - `gap = d.left − l.right` dentro de `[−GROUP_MAX_OVERLAP_FACTOR·min(w), GROUP_MAX_GAP_FACTOR·max(h) + permiso]`,
+     donde `permiso = max(0, ONE_CELL_FACTOR·h(d) / roi_aspect − w(d))` si `d` es un «1» y `0` en otro caso.
+     Un «1» solo enciende los segmentos de la derecha de su celda, así que la celda vacía que queda a su
+     izquierda se suma al hueco; con una fuente ordinaria ese hueco (≈ 0,47 de la altura del dígito) supera
+     el límite normal y partía «121» u «81» (v1.0, hallazgo F1).
 
    Si hay varios grupos válidos, se elige el de **menor `gap`**. Si no hay ninguno, `d` abre un
    grupo nuevo.
+
+   **Paso 2b (tandas fusionadas)**: el permiso del «1» puede encadenar dos números contiguos cuando el
+   segundo empieza por «1». Una tanda de **4 a 6 dígitos** se parte en dos por su hueco más ancho si ese
+   hueco es al menos `SPLIT_GAP_RATIO` veces mayor que cada uno de los demás y las dos partes tienen 2
+   o 3 dígitos. Las tandas con huecos parecidos (un año, una hora sin dos puntos) no se parten y se
+   ignoran en el paso 3.
 3. **Clasificar cada grupo**:
    - si contiene `E` → **grupo de error**;
-   - si son ≥ 2 `dash` y nada más → **grupo «midiendo»**;
    - si contiene `colon` → **hora** (se ignora);
    - si son solo dígitos y tiene 2 o 3 → **número** (su valor es la concatenación, su caja es la
      envolvente y su confianza es la media);
@@ -108,8 +124,9 @@ Notación: `h(b) = bottom − top`, `w(b) = right − left`, y
      mezclas).
 4. **Estado del frame**:
    - si existe algún grupo de error → `DEVICE_ERROR` (los campos son nulos);
-   - si no hay números → `MEASURING` si existe un grupo «midiendo» y `NO_READING` en caso
-     contrario.
+   - si no hay números → `MEASURING` si quedaron **al menos 2 detecciones `dash`** tras el filtro (los
+     guiones están a una celda de distancia y son mucho más bajos que un dígito, así que no se agrupan
+     de forma fiable: se cuentan sin agrupar) y `NO_READING` en caso contrario.
 5. **Orden de lectura**: con `H` = altura del número más alto, los *secundarios* son los números
    con `h >= SECONDARY_MIN_HEIGHT_RATIO·H`. Se agrupan en **filas**: se recorren ordenados por su
    centro vertical y cada uno entra en la primera fila existente cuyo **primer** elemento cumpla
@@ -165,3 +182,4 @@ Reglas:
 |---------|-------|--------|
 | 1.0.0 | 2026-10-19 | Versión inicial: 14 casos de parser y 14 de validación |
 | 1.0.1 | 2026-10-19 | Corrige el símbolo de la hora en los casos dorados (`colon`, no `":"`), detectado al ejecutarlos en la app |
+| 1.1.0 | 2026-10-19 | Hallazgos F1–F3 del generador sintético: permiso del «1» y `roi_aspect` (F1: con una fuente ordinaria, las lecturas con un «1» tras el primer dígito pasan de 54 % a reconstruirse todas), `GROUP_MAX_OVERLAP_FACTOR` 0,30 → 0,45 por el giro y la perspectiva (F2), `dash`/`colon` con altura mínima propia y «midiendo» por recuento de guiones (F3), tandas fusionadas (paso 2b). 7 casos dorados nuevos; los 14 anteriores siguen válidos |
