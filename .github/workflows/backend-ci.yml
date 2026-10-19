@@ -1,0 +1,58 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [master, recognition-refactor-feature]
+  pull_request:
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok'"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Makes the integration tests run against this real MongoDB instead of the in-memory double.
+      TENSOSCAN_TEST_MONGODB_URL: mongodb://localhost:27017
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+
+      - name: Types
+        run: uv run mypy
+
+      - name: Tests with coverage gate
+        run: uv run pytest --cov --cov-report=term-missing:skip-covered
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the production image
+        run: docker build --tag tensoscan-api:ci .
+      - name: The image carries no secrets and does not run as root
+        run: |
+          docker run --rm --entrypoint sh tensoscan-api:ci -c 'test -z "$(ls -A /app | grep -E "^\.env")" && test "$(id -u)" != "0"'

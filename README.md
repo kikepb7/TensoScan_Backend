@@ -1,94 +1,63 @@
-<h1 align="center">⚙️ TensoScan Backend</h1>
+# ⚙️ TensoScan Backend
 
-> **Backend services powering the AI-driven blood pressure monitoring ecosystem**
->
-> This backend provides the essential APIs and infrastructure to support the TensoScan mobile application, focusing on secure data management, user authentication, and enabling intelligent features for blood pressure tracking
+API del ecosistema TensoScan: autenticación, asistente y (desde la spec B-002) mediciones confirmadas por el
+usuario. El reconocimiento de los dígitos del tensiómetro **ya no ocurre aquí**: la app lo hace en el
+dispositivo y solo envía valores confirmados (ver `specs/`).
 
----
+## Arquitectura
 
-## 🚀 Key Features
+```
+api (routers FastAPI, schemas HTTP)  ─┐
+                                      ├─► application (casos de uso) ─► domain (entidades, errores, puertos)
+infrastructure (Mongo, JWT, Argon2, LLM) ─┘                                  ▲
+                     └──────────────── implementa los puertos ───────────────┘
+```
 
-- 🔑 **Secure User Authentication and Authorization**: Protecting user data with robust authentication mechanisms
-- 💾 **Centralized Data Storage**: Utilizing a scalable database for storing and managing blood pressure readings and user information
-- 🔗 **Comprehensive API Endpoints**: Offering well-defined and secure APIs for seamless communication with the TensoScan mobile application
-- 🧠 **Integration with AI/ML Capabilities**: Laying the groundwork for future intelligent features, potentially leveraging models for data analysis or insights
-- ⚙️ **Scalable and Robust Architecture**: Designed to handle a growing user base and increasing data loads
+- `app/domain`: reglas y puertos, sin frameworks. `app/application`: casos de uso.
+- `app/infrastructure`: MongoDB (PyMongo async), PyJWT, Argon2id, cliente del proveedor LLM.
+- `app/api`: routers `v1` y alias `legacy` (cabecera `Deprecation`) para la versión anterior de la app.
+- `app/main.py`: `create_app()` (factory); nada pesado se ejecuta al importar.
+- Todos los errores usan el sobre `{"error": {"code", "message", "details"}}`.
 
----
+La especificación, las decisiones (ADR) y los contratos compartidos con la app están en [`specs/`](specs/README.md).
 
-## 🧱 Architecture
+## Puesta en marcha
 
-- **API Layer (FastAPI/Starlette)**: Handles incoming requests from the mobile application
-- **Authentication Layer (python-jose, Passlib)**: Manages user registration, login, and token-based authentication
-- **Business Logic Layer**: Contains the core application logic for data processing and management
-- **Data Access Layer (SQLAlchemy/MongoDB)**: Interacts with the database for data persistence
-- **Potential ML Integration**: Modules for interacting with machine learning models (TensorFlow, Keras, OpenCV)
+```bash
+cp .env.example .env            # rellena TENSOSCAN_SECRET_KEY (≥ 32 bytes) y las credenciales de Mongo
+docker compose up --build       # API en http://127.0.0.1:8000 · documentación en /docs
+```
 
----
+Sin Docker: `uv sync --dev` y `uv run uvicorn app.main:create_app --factory --reload`
+(requiere un MongoDB accesible en `TENSOSCAN_MONGODB_URL`).
 
-## 🧰 Tech Stack
+El servicio **no arranca sin `TENSOSCAN_SECRET_KEY`**. El OCR antiguo del servidor está desactivado por defecto
+(`TENSOSCAN_ENABLE_LEGACY_OCR`, necesita `uv sync --extra legacy-ocr` y el modelo en `ia_models/`).
 
-| Category         | Technology                                  | Notes                                                                 |
-|------------------|---------------------------------------------|-----------------------------------------------------------------------|
-| ⚙️ Backend       | FastAPI (~0.114.2), Starlette (0.38.6), Uvicorn (0.34.1) | High-performance asynchronous framework and server                 |
-| 🐍 Language       | Python                                      |                                                                       |
-| 🔑 Authentication | python-jose, Passlib (~1.7.4), bcrypt (~4.3.0) | JWT for token management and password hashing                        |
-| 💾 Database      | SQLAlchemy (likely), pymongo (3.12.0)       | Potential for relational (SQLAlchemy) or NoSQL (MongoDB) database |
-| 🌐 Networking    | httpx (~0.28.1), requests (2.32.3)          | For making HTTP requests                                             |
-| 🛡️ Security       | cryptography (44.0.2)                         | Provides cryptographic primitives                                      |
-| ⚙️ Utilities      | python-dotenv (1.0.1), pydantic (2.11.3)      | Configuration management and data validation                         |
-| 🧠 ML/AI          | tensorflow (2.19.0), keras (3.9.2), opencv-python (~4.11.0.86), numpy (1.26.4), scikit-image (~0.24.0) | Libraries for potential AI/ML features                             |
-| 📊 Data & Science | scipy (1.13.1), matplotlib (3.9.4), plotly (6.0.1) | For data manipulation, scientific computing, and visualization      |
-| 📄 PDF Handling   | fpdf (1.7.2), pikepdf (9.7.0), pypdf (5.4.0), reportlab (4.4.0), xhtml2pdf (0.2.17) | Libraries for generating and manipulating PDF documents              |
-| 🖼️ Image Processing| Pillow (~10.0.1), imageio (2.37.0)         | For image manipulation                                               |
+## Desarrollo
 
----
+```bash
+uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest
+```
 
-## 🔗 API Endpoints
+Los tests de integración usan un MongoDB real si `TENSOSCAN_TEST_MONGODB_URL` está definida (así corren en CI) y un
+doble en memoria en caso contrario.
 
-🔐 Authentication
-| Method | Endpoint    | Description                            | Auth Required |
-| ------ | ----------- | -------------------------------------- | ------------- |
-| POST   | `/register` | Register a new user                    | ❌ No          |
-| POST   | `/login`    | Authenticate user and return JWT token | ❌ No          |
+## Endpoints (v1)
 
+| Método | Ruta | Descripción | Auth |
+|--------|------|-------------|------|
+| POST | `/v1/auth/register` | Alta de usuario | No |
+| POST | `/v1/auth/login` | Access token (30 min) + refresh token (rota en cada uso) | No |
+| POST | `/v1/auth/refresh` | Renueva la sesión; reutilizar un refresh ya usado revoca toda la familia | No |
+| POST | `/v1/auth/logout` | Cierra la sesión | No |
+| GET | `/v1/users/me` | Perfil | Sí |
+| DELETE | `/v1/users/me` | Elimina la cuenta y todos sus datos (pide la contraseña) | Sí |
+| POST | `/v1/assistant/messages` | Asistente informativo (no diagnostica) | Sí |
+| GET | `/health` | Estado del servicio y de la base de datos | No |
 
-💬 Chatbot Interaction
-| Method | Endpoint   | Description                                                        | Auth Required |
-| ------ | ---------- | ------------------------------------------------------------------ | ------------- |
-| POST   | `/chatbot` | Get AI-generated response based on prompt and conversation history | ✅ Yes         |
+Contrato completo: [`specs/contracts/api-v1.md`](specs/contracts/api-v1.md).
 
+## Licencia
 
-🖼️ Image Recognition
-| Method | Endpoint             | Description                                                            | Auth Required |
-| ------ | -------------------- | ---------------------------------------------------------------------- | ------------- |
-| POST   | `/recognize`         | Recognize numbers from uploaded image (raw model)                      | ❌ No          |
-| POST   | `/display-recognize` | Analyze image, return structured blood pressure result, and save to DB | ✅ Yes         |
-
-
-📊 Measurements Management
-| Method | Endpoint                    | Description                               | Auth Required |
-| ------ | --------------------------- | ----------------------------------------- | ------------- |
-| GET    | `/measurements`             | Get user's historical blood pressure data | ✅ Yes         |
-| DELETE | `/remove/measurements/{id}` | Delete a specific measurement by ID       | ✅ Yes         |
-
-
-🧾 Reports & Visualization
-| Method | Endpoint                  | Description                                     | Auth Required |
-| ------ | ------------------------- | ----------------------------------------------- | ------------- |
-| GET    | `/user/measurements/html` | Get user's measurements rendered in HTML format | ✅ Yes         |
-| GET    | `/user/measurements/pdf`  | Download user's measurements as a PDF document  | ✅ Yes         |
-
----
-
-## 🧠 Potential AI/ML Integration
-
-- **Data Analysis**: Analyzing blood pressure trends and patterns
-- **Insights Generation**: Providing users with personalized insights based on their historical data
-- **Future Features**: Exploring more advanced AI-powered functionalities
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License
+MIT

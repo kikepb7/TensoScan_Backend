@@ -1,14 +1,23 @@
-# Carpetas que no queremos copiar al contenedor
+# Never ship secrets, local data or things the runtime does not need.
+.env
+.env.*
+!.env.example
 .git
+.github
 .idea
-__pycache__/
+.venv
+.pytest_cache
+.mypy_cache
+.ruff_cache
+__pycache__
 *.pyc
-*.pyo
-*.pyd
-*.db
-*.sqlite3
-*.log
-
-# Ignorar archivos de Docker que no se necesitan dentro del contenedor
+.coverage
+htmlcov
+tests
+specs
+ml
+data
+ia_models
 Dockerfile
-docker-compose.yml
+docker-compose*.y*ml
+CLAUDE.md

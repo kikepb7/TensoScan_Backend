@@ -1,16 +1,35 @@
+# Local development stack: the API and a MongoDB that requires authentication.
+# Copy .env.example to .env and fill in TENSOSCAN_SECRET_KEY and the MONGO_INITDB_* credentials first.
 services:
-  app:
+  api:
     build: .
     ports:
-      - "8000:8000"
+      # Loopback only. For a physical phone on the LAN use API_BIND=0.0.0.0 (development networks only).
+      - "${API_BIND:-127.0.0.1}:8000:8000"
     environment:
-      - MONGODB_URL=mongodb://mongo:27017
+      TENSOSCAN_ENVIRONMENT: dev
+      TENSOSCAN_LOG_JSON: "false"
+      TENSOSCAN_SECRET_KEY: ${TENSOSCAN_SECRET_KEY:?Set TENSOSCAN_SECRET_KEY in .env}
+      TENSOSCAN_MONGODB_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME:?Set it in .env}:${MONGO_INITDB_ROOT_PASSWORD:?Set it in .env}@mongo:27017/?authSource=admin
+      TENSOSCAN_ASSISTANT_PROVIDER_API_KEY: ${TENSOSCAN_ASSISTANT_PROVIDER_API_KEY:-}
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
 
   mongo:
-    image: mongo:latest
-    volumes:
-      - ./data:/data/db
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:?Set it in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?Set it in .env}
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo-data:

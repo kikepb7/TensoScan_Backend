@@ -1,3 +1,16 @@
 .env
-ia_models/definitive_model.keras
+.env.*
+!.env.example
 .idea
+.venv
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+ia_models/
+data/
+dist/
+*.egg-info/
