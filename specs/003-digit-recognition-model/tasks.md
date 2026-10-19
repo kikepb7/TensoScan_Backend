@@ -65,9 +65,13 @@
     Registrar el resultado y la decisión en el ADR.
   - Requiere GPU (Q-B003-03).
   - Req.: REQ-B003-14.
-- [ ] **T-B003-09 · Pipeline de entrenamiento de 2 etapas**
+- [x] **T-B003-09 · Pipeline de entrenamiento de 2 etapas**
   - Configs, semillas, *checkpoints* y curvas.
   - Req.: REQ-B003-15.
+  - Nota de implementación: detector anclaje-libre propio estilo YOLOX-Nano (0,69 M parámetros, `width=0.25`), con
+    pérdida SimOTA, EMA, AdamW y coseno; arquitectura enchufable (`ARCHITECTURES`) sin código AGPL. El spike
+    (T-B003-08) decide la arquitectura final. La etapa 2 se omite con aviso mientras no haya fotogramas reales con
+    cajas (`--require-real` lo convierte en error). Prueba de humo en CPU: `configs/train/smoke.yaml`.
 - [ ] **T-B003-10b · Modelo «dummy» conforme al contrato (pesos aleatorios)**
   - `tensoscan-ml dummy-model` genera un `.tflite` + sidecar con la E/S exacta del contrato, sin valor
     predictivo. Permite completar y testear en la app todo el código de `LiteRtDigitDetector`

@@ -1,0 +1,51 @@
+# Two-stage training of the digit detector (spec B-003, REQ-B003-15, ADR-B003-04).
+#   stage 1: pre-train on synthetic data;  stage 2: fine-tune on real frames with boxes mixed with synthetic ones.
+# Paths may use $TENSOSCAN_ML_DATA_DIR. Run: tensoscan-ml train --config configs/train/yolox-nano-v1.yaml
+name: yolox-nano-v1
+seed: 42
+device: auto # auto | cpu | cuda
+input_size: 320 # fixed by the model contract
+out_dir: $TENSOSCAN_ML_DATA_DIR/runs
+
+arch:
+  name: yolox-nano # see tensoscan_ml/model/yolox.py ARCHITECTURES
+  depth: 0.33
+  width: 0.25
+  depthwise: true
+
+optimizer:
+  name: adamw
+  weight_decay: 0.0005
+  grad_clip: 10.0
+  ema_decay: 0.9995
+
+data:
+  synthetic: # `tensoscan-ml synth` output; generated on the fly when the folder does not exist and `autogenerate` is set
+    path: $TENSOSCAN_ML_DATA_DIR/synth/ds-synth-0.1.0
+    autogenerate: { train: 30000, val: 3000 }
+  real: # manifests written by `ingest` + `prelabel` (rows with `labels`); stage 2 is skipped while they do not exist
+    train: $TENSOSCAN_ML_DATA_DIR/real/ds-real-0.1.0/train_boxes.jsonl
+    val: $TENSOSCAN_ML_DATA_DIR/real/ds-real-0.1.0/val_boxes.jsonl
+
+stages:
+  - name: pretrain-synthetic
+    epochs: 60
+    batch_size: 64
+    lr: 0.002
+    warmup_epochs: 2
+    min_lr_ratio: 0.05
+    samples_per_epoch: 20000
+    sources: { synthetic: 1.0 }
+    eval_every: 5 # epochs between mAP evaluations on the validation sets
+    val_images: 300
+  - name: finetune-real-mixed
+    requires_real: true
+    epochs: 30
+    batch_size: 32
+    lr: 0.0005
+    warmup_epochs: 1
+    min_lr_ratio: 0.05
+    samples_per_epoch: 3000
+    sources: { real: 0.7, synthetic: 0.3 }
+    eval_every: 2
+    val_images: 300

@@ -45,7 +45,9 @@ def run(args: argparse.Namespace) -> int:
     elif args.detector == "checkpoint":
         if not args.model:
             raise ValueError("--detector checkpoint needs --model path/to/best.pt")
-        source = _checkpoint_detector(args.model)
+        from tensoscan_ml.model.runtime import checkpoint_detector
+
+        source = checkpoint_detector(args.model)
     else:
         raise ValueError("--detector must be checkpoint, tflite or a path to a .jsonl file")
 
@@ -65,15 +67,3 @@ def run(args: argparse.Namespace) -> int:
     if failed:
         fail("below the acceptance thresholds: " + ", ".join(failed))
     return 0
-
-
-def _checkpoint_detector(path: str) -> Detector:
-    """The checkpoint back-end lives with the model (needs the `train` extra)."""
-    import importlib
-
-    try:
-        module = importlib.import_module("tensoscan_ml.model.runtime")
-    except ImportError as error:
-        raise ImportError("evaluating a checkpoint needs the `train` extra: uv sync --extra train") from error
-    detector: Detector = module.checkpoint_detector(path)
-    return detector
