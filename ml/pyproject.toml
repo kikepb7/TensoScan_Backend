@@ -96,6 +96,13 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
+filterwarnings = [
+    # Noise from the conversion toolchain (legacy ONNX exporter, gast on Python 3.13), not from this package.
+    "ignore::DeprecationWarning:torch.*",
+    "ignore::DeprecationWarning:gast.*",
+    "ignore::DeprecationWarning:onnx2tf.*",
+    "ignore:You are using the legacy TorchScript-based ONNX export:DeprecationWarning",
+]
 markers = [
     "torch: needs the `train` extra (PyTorch); skipped when it is not installed",
     "export: needs the `export` extra (ONNX, onnx2tf, TensorFlow, LiteRT); slow, skipped when it is not installed",
