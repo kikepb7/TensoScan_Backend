@@ -7,7 +7,7 @@
 > - Backend: validación de `POST /v1/measurements` (spec B-002) y harness de evaluación del
 >   modelo (spec B-003), que **reutiliza el mismo parser** para medir el acierto por lectura.
 >
-> Versión: **1.0.0** · Estado: 📝 Pendiente de aprobación
+> Versión: **1.0.1** · Estado: 📝 Pendiente de aprobación
 
 ## 1. Por qué existe este contrato
 
@@ -164,3 +164,4 @@ Reglas:
 | Versión | Fecha | Cambio |
 |---------|-------|--------|
 | 1.0.0 | 2026-10-19 | Versión inicial: 14 casos de parser y 14 de validación |
+| 1.0.1 | 2026-10-19 | Corrige el símbolo de la hora en los casos dorados (`colon`, no `":"`), detectado al ejecutarlos en la app |

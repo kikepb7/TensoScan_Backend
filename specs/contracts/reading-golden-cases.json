@@ -1,5 +1,5 @@
 {
- "contract_version": "1.0.0",
+ "contract_version": "1.0.1",
  "parser_cases": [
   {
    "name": "stacked_three_rows_small_pulse",
@@ -436,7 +436,7 @@
      "confidence": 0.9
     },
     {
-     "symbol": ":",
+     "symbol": "colon",
      "box": [
       0.1032,
       0.01,
