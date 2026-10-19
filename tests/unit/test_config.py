@@ -44,3 +44,12 @@ def test_values_come_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> No
 
 def test_secrets_are_not_printed() -> None:
     assert "kkkk" not in repr(_settings())
+
+
+def test_a_mistyped_report_time_zone_stops_the_start_up() -> None:
+    with pytest.raises(ValidationError, match="IANA"):
+        _settings(default_report_tz="Europe/Madrdi")
+
+
+def test_another_valid_report_time_zone_is_accepted() -> None:
+    assert _settings(default_report_tz="America/Mexico_City").default_report_tz == "America/Mexico_City"

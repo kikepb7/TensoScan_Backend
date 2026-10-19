@@ -42,7 +42,7 @@ def _violations(layer: str) -> list[str]:
     forbidden = RULES[layer]
     problems = []
     for path in sorted((APP / layer).rglob("*.py")):
-        if "legacy" in path.parts[-2]:  # legacy_ocr / legacy_reports are retired in B-002
+        if "legacy" in path.parts[-2]:  # legacy_ocr is retired in B-002 (T-B002-09)
             continue
         for module in _imports(path):
             if any(module == rule or module.startswith(rule + ".") for rule in forbidden):

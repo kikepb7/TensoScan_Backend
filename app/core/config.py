@@ -3,6 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -37,6 +38,15 @@ class Settings(BaseSettings):
     register_per_hour: int = 10
     refresh_per_minute: int = 30
     assistant_per_minute: int = 20
+
+    @field_validator("default_report_tz")
+    @classmethod
+    def _default_report_tz_is_an_iana_zone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (KeyError, ValueError, OSError) as error:  # a typo must stop the start-up, not break every report
+            raise ValueError(f"{value!r} is not an IANA time zone") from error
+        return value
 
     @field_validator("secret_key")
     @classmethod

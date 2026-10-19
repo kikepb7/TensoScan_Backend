@@ -1,6 +1,6 @@
 from datetime import datetime
 from http import HTTPStatus
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Path, Query, Response, status
 
@@ -50,6 +50,34 @@ async def list_measurements(
         user_id=user.id, since=since, until=until, limit=limit, cursor=cursor
     )
     return MeasurementPageResponse.from_domain(listing)
+
+
+@router.get(
+    "/report",
+    response_class=Response,
+    responses={
+        status.HTTP_200_OK: {
+            "content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}},
+            "description": "The PDF report",
+        },
+        status.HTTP_404_NOT_FOUND: {"model": ErrorResponse, "description": "No measurements in the range"},
+        HTTPStatus.UNPROCESSABLE_ENTITY: {"model": ErrorResponse, "description": "VALIDATION_ERROR (tz, format)"},
+    },
+)
+async def measurements_report(
+    user: CurrentUser,
+    container: ContainerDep,
+    report_format: Annotated[Literal["pdf"], Query(alias="format")] = "pdf",
+    since: Annotated[datetime | None, Query(alias="from")] = None,
+    until: Annotated[datetime | None, Query(alias="to")] = None,
+    tz: str | None = None,
+) -> Response:
+    report = await container.generate_report.execute(user=user, since=since, until=until, timezone=tz)
+    return Response(
+        content=report.content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{report.filename}"'},
+    )
 
 
 @router.delete(

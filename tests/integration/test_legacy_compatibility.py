@@ -111,3 +111,43 @@ async def test_the_legacy_ocr_routes_are_not_even_registered_when_the_feature_is
     )
 
     assert response.status_code == 404
+
+
+async def test_the_legacy_html_report_is_a_plain_escaped_table_without_scripts_or_external_resources(
+    client: httpx.AsyncClient,
+) -> None:
+    from tests.support.measurements import body, post
+
+    tokens = await register_and_login(client)
+    await post(client, tokens, body(systolic=131, diastolic=84, pulse=66))
+
+    response = await client.get("/ocr/user/measurements/html", headers=bearer(tokens))
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "<td>131</td><td>84</td><td>66</td><td>19-10-2026 08:15</td>" in response.text
+    lowered = response.text.lower()
+    assert "<script" not in lowered and "http://" not in lowered and "https://" not in lowered
+    assert response.headers["Deprecation"] == "true"
+
+
+async def test_the_legacy_pdf_report_reuses_the_new_renderer(client: httpx.AsyncClient) -> None:
+    from tests.support.measurements import body, post
+
+    tokens = await register_and_login(client)
+    await post(client, tokens, body())
+
+    response = await client.get("/ocr/user/measurements/pdf", headers=bearer(tokens))
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content.startswith(b"%PDF")
+
+
+async def test_the_legacy_reports_are_404_when_there_is_nothing_to_report(client: httpx.AsyncClient) -> None:
+    tokens = await register_and_login(client)
+
+    html = await client.get("/ocr/user/measurements/html", headers=bearer(tokens))
+    pdf = await client.get("/ocr/user/measurements/pdf", headers=bearer(tokens))
+
+    assert (html.status_code, pdf.status_code) == (404, 404)

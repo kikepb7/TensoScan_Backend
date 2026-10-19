@@ -17,7 +17,8 @@ from app.application.auth.tokens import SessionIssuer
 from app.application.measurements.create_measurement import CreateMeasurement
 from app.application.measurements.delete_measurement import DeleteMeasurement
 from app.application.measurements.erase_measurements import EraseAllMeasurements
-from app.application.measurements.list_measurements import ListMeasurements
+from app.application.measurements.generate_report import GenerateMeasurementsReport
+from app.application.measurements.list_measurements import ListAllMeasurements, ListMeasurements
 from app.core.config import Settings
 from app.core.rate_limit import RateLimiter
 from app.domain.clock import SystemClock
@@ -28,6 +29,7 @@ from app.infrastructure.mongo.legacy_results_eraser import LegacyResultsEraser
 from app.infrastructure.mongo.measurement_repository import MongoMeasurementRepository
 from app.infrastructure.mongo.refresh_token_repository import MongoRefreshTokenRepository
 from app.infrastructure.mongo.user_repository import MongoUserRepository
+from app.infrastructure.reports.reportlab_renderer import ReportLabReportRenderer
 from app.infrastructure.security.jwt_service import JwtAccessTokenService
 from app.infrastructure.security.password_hasher import PwdlibPasswordHasher
 
@@ -60,7 +62,9 @@ class Container:
     measurements: MeasurementRepository
     create_measurement: CreateMeasurement
     list_measurements: ListMeasurements
+    list_all_measurements: ListAllMeasurements
     delete_measurement: DeleteMeasurement
+    generate_report: GenerateMeasurementsReport
     legacy_ocr: Any = None
 
 
@@ -106,7 +110,11 @@ def build_container(
         measurements=measurements,
         create_measurement=CreateMeasurement(measurements, clock),
         list_measurements=ListMeasurements(measurements),
+        list_all_measurements=ListAllMeasurements(measurements),
         delete_measurement=DeleteMeasurement(measurements),
+        generate_report=GenerateMeasurementsReport(
+            measurements, ReportLabReportRenderer(), clock, settings.default_report_tz
+        ),
         legacy_ocr=_legacy_ocr(settings),
     )
 

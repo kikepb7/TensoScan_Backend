@@ -8,8 +8,6 @@ from fastapi import FastAPI
 
 CONTRACT = Path(__file__).resolve().parents[2] / "specs" / "contracts" / "api-v1.md"
 IMPLEMENTED = ("/v1/auth", "/v1/users", "/v1/measurements", "/v1/assistant", "/health")
-# Documented in the contract but not built yet (spec B-002, T-B002-05).
-PENDING = {("GET", "/v1/measurements/report")}
 ENDPOINT = re.compile(r"^#{2,4} `(GET|POST|PUT|PATCH|DELETE) (/[^`\s?]*)", re.MULTILINE)
 
 EXPECTED_SUCCESS_STATUS = {
@@ -23,18 +21,20 @@ EXPECTED_SUCCESS_STATUS = {
     ("POST", "/v1/measurements"): "201",
     ("GET", "/v1/measurements"): "200",
     ("DELETE", "/v1/measurements/{id}"): "204",
+    ("GET", "/v1/measurements/report"): "200",
 }
 # Other documented outcomes that must be declared in OpenAPI too.
 EXPECTED_OTHER_STATUS = {
     ("POST", "/v1/measurements"): ("200", "409", "422"),
     ("GET", "/v1/measurements"): ("422",),
     ("DELETE", "/v1/measurements/{id}"): ("404",),
+    ("GET", "/v1/measurements/report"): ("404", "422"),
 }
 
 
 def _documented() -> set[tuple[str, str]]:
     found = {(method, path) for method, path in ENDPOINT.findall(CONTRACT.read_text())}
-    return {(method, path) for method, path in found if path.startswith(IMPLEMENTED)} - PENDING
+    return {(method, path) for method, path in found if path.startswith(IMPLEMENTED)}
 
 
 def _implemented(app: FastAPI) -> set[tuple[str, str]]:
@@ -125,3 +125,13 @@ def test_the_listing_accepts_the_documented_query_parameters(app: FastAPI) -> No
 
     assert set(by_name) == {"from", "to", "limit", "cursor"}
     assert (by_name["limit"]["minimum"], by_name["limit"]["maximum"], by_name["limit"]["default"]) == (1, 200, 50)
+
+
+def test_the_report_is_only_a_pdf_and_takes_the_documented_query_parameters(app: FastAPI) -> None:
+    operation = app.openapi()["paths"]["/v1/measurements/report"]["get"]
+    parameters = {parameter["name"]: parameter["schema"] for parameter in operation["parameters"]}
+
+    assert set(parameters) == {"format", "from", "to", "tz"}
+    # A single-value Literal is emitted as `const` by recent Pydantic and as a one-element `enum` by older ones.
+    assert parameters["format"].get("enum", [parameters["format"].get("const")]) == ["pdf"]
+    assert list(operation["responses"]["200"]["content"]) == ["application/pdf"]

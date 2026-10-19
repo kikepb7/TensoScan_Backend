@@ -4,35 +4,15 @@ import asyncio
 import json
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
 
 import httpx
 import pytest
 
 from tests.conftest import NEW_USER, bearer, register_and_login
+from tests.support.measurements import body, post
 
 GOLDEN = Path(__file__).resolve().parents[2] / "specs" / "contracts" / "reading-golden-cases.json"
 VALIDATION_CASES: list[dict[str, Any]] = json.loads(GOLDEN.read_text())["validation_cases"]
-# The fixed test clock reads 2026-10-19T08:00:00Z.
-MEASURED_AT = "2026-10-19T06:15:00Z"
-
-
-def body(**changes: Any) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "client_id": str(uuid4()),
-        "systolic": 128,
-        "diastolic": 82,
-        "pulse": 67,
-        "measured_at": MEASURED_AT,
-        "source": "camera",
-        "recognition": {"confidence": 0.93, "model_version": "digits-1.0.0", "edited_fields": ["pulse"]},
-    }
-    payload.update(changes)
-    return {key: value for key, value in payload.items() if value is not ...}
-
-
-async def post(client: httpx.AsyncClient, tokens: dict[str, Any], payload: dict[str, Any]) -> httpx.Response:
-    return await client.post("/v1/measurements", headers=bearer(tokens), json=payload)
 
 
 @pytest.fixture

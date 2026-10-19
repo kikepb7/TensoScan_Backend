@@ -6,16 +6,15 @@ Spec B-002 (T-B002-07) re-points them to the new ``measurements`` collection and
 from typing import Any
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, Path
-from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import APIRouter, Depends, Path, Response
+from fastapi.responses import HTMLResponse
 
 from app.api.deps import ContainerDep, CurrentUser
-from app.api.legacy.headers import deprecated
+from app.api.legacy.headers import deprecated, deprecation_headers
+from app.api.legacy.measurements_html import render_measurements_html
+from app.application.measurements.generate_report import parse_timezone
 from app.domain.errors import FieldIssue, NotFound, ValidationFailed
 from app.infrastructure.legacy_ocr.models import Measurement
-from app.infrastructure.legacy_reports.html_render import render_measurements_html
-from app.infrastructure.legacy_reports.pdf_generator import generate_pdf_from_html
 
 router = APIRouter(prefix="/ocr", tags=["legacy"], dependencies=[Depends(deprecated("/v1/measurements"))])
 
@@ -50,22 +49,25 @@ async def list_measurements(user: CurrentUser, container: ContainerDep) -> list[
 
 @router.get("/user/measurements/html", response_class=HTMLResponse)
 async def measurements_html(user: CurrentUser, container: ContainerDep) -> HTMLResponse:
-    measurements = await _results_of(container, user.id)
+    measurements = await container.list_all_measurements.execute(user_id=user.id)
     if not measurements:
         raise NotFound("No measurements found")
-    return HTMLResponse(content=render_measurements_html(measurements))
+    zone = parse_timezone(container.settings.default_report_tz)
+    return HTMLResponse(
+        content=render_measurements_html(measurements, zone), headers=deprecation_headers("/v1/measurements")
+    )
 
 
 @router.get("/user/measurements/pdf")
-async def measurements_pdf(user: CurrentUser, container: ContainerDep) -> StreamingResponse:
-    measurements = await _results_of(container, user.id)
-    if not measurements:
-        raise NotFound("No measurements found")
-    pdf_file = await run_in_threadpool(generate_pdf_from_html, render_measurements_html(measurements))
-    return StreamingResponse(
-        pdf_file,
+async def measurements_pdf(user: CurrentUser, container: ContainerDep) -> Response:
+    report = await container.generate_report.execute(user=user, since=None, until=None, timezone=None)
+    return Response(
+        content=report.content,
         media_type="application/pdf",
-        headers={"Content-Disposition": "attachment; filename=mediciones.pdf"},
+        headers={
+            **deprecation_headers("/v1/measurements/report?format=pdf"),
+            "Content-Disposition": "attachment; filename=mediciones.pdf",
+        },
     )
 
 

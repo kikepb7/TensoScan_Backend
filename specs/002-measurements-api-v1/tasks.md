@@ -14,7 +14,7 @@
   - Req.: REQ-B002-01…07.
 - [x] **T-B002-04 · Router `/v1/measurements` + schemas + tests de integración y de contrato**
   - Hallazgos: AUD-B-11, 18 · DoD: CA-B002-01…07.
-- [ ] **T-B002-05 · `GenerateMeasurementsReport` + `ReportLabReportRenderer` + endpoint `/report`**
+- [x] **T-B002-05 · `GenerateMeasurementsReport` + `ReportLabReportRenderer` + endpoint `/report`**
   - Eliminar `html_render.py` (salvo la plantilla con *autoescape* para el alias legacy),
     `pdf_generator.py` y xhtml2pdf.
   - Req.: REQ-B002-08…10 · Hallazgos: AUD-B-21, 22, 23 · DoD: CA-B002-08.
