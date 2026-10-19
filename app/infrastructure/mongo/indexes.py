@@ -34,3 +34,11 @@ async def create_indexes(db: Database) -> None:
     await refresh.create_index("family_id", name="refresh_family")
     await refresh.create_index("user_id", name="refresh_user")
     await refresh.create_index("expires_at", expireAfterSeconds=0, name="refresh_expiry_ttl")
+
+    measurements = db["measurements"]
+    await measurements.create_index(
+        [("user_id", 1), ("client_id", 1)], unique=True, name="measurements_user_client_unique"
+    )
+    await measurements.create_index(
+        [("user_id", 1), ("measured_at", -1), ("_id", -1)], name="measurements_user_measured_at"
+    )

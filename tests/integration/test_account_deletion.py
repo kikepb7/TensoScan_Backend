@@ -51,3 +51,21 @@ async def test_deleting_requires_authentication(client: httpx.AsyncClient) -> No
     response = await client.request("DELETE", "/v1/users/me", json={"password": "whatever"})
 
     assert response.status_code == 401
+
+
+async def test_deleting_the_account_also_removes_the_users_v1_measurements(client: httpx.AsyncClient, db: Any) -> None:
+    tokens = await register_and_login(client)
+    other = await register_and_login(client, {**NEW_USER, "email": "other@example.com"})
+    await db["measurements"].insert_many(
+        [
+            {"user_id": ObjectId(tokens["user"]["id"]), "client_id": "a"},
+            {"user_id": ObjectId(tokens["user"]["id"]), "client_id": "b"},
+            {"user_id": ObjectId(other["user"]["id"]), "client_id": "a"},
+        ]
+    )
+
+    response = await _delete(client, tokens, NEW_USER["password"])
+
+    assert response.status_code == 204
+    assert await db["measurements"].count_documents({"user_id": ObjectId(tokens["user"]["id"])}) == 0
+    assert await db["measurements"].count_documents({"user_id": ObjectId(other["user"]["id"])}) == 1

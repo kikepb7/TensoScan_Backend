@@ -6,7 +6,7 @@
   - Fixture de los casos dorados leída desde `specs/contracts/reading-golden-cases.json` (sin
     copias). Payload canónico.
   - Req.: REQ-B002-01, 05 · Hallazgos: AUD-B-15.
-- [ ] **T-B002-02 · `MongoMeasurementRepository` + índices**
+- [x] **T-B002-02 · `MongoMeasurementRepository` + índices**
   - Inserción idempotente (ADR-B002-01), listado con cursor y borrado con propietario.
   - Incluye `delete_all_for_user` (lo usa T-B001-14).
   - Req.: REQ-B002-02…04, 06, 07 · Hallazgos: AUD-B-16, 17.

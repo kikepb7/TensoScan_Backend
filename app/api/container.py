@@ -14,13 +14,15 @@ from app.application.auth.logout import Logout
 from app.application.auth.refresh_session import RefreshSession
 from app.application.auth.register_user import RegisterUser
 from app.application.auth.tokens import SessionIssuer
+from app.application.measurements.erase_measurements import EraseAllMeasurements
 from app.core.config import Settings
 from app.core.rate_limit import RateLimiter
 from app.domain.clock import SystemClock
-from app.domain.ports import Clock
+from app.domain.ports import Clock, MeasurementRepository
 from app.infrastructure.llm.openai_client import OpenAiLlmClient
 from app.infrastructure.mongo.client import Database
 from app.infrastructure.mongo.legacy_results_eraser import LegacyResultsEraser
+from app.infrastructure.mongo.measurement_repository import MongoMeasurementRepository
 from app.infrastructure.mongo.refresh_token_repository import MongoRefreshTokenRepository
 from app.infrastructure.mongo.user_repository import MongoUserRepository
 from app.infrastructure.security.jwt_service import JwtAccessTokenService
@@ -52,7 +54,7 @@ class Container:
     get_current_user: GetCurrentUser
     delete_account: DeleteAccount
     answer_assistant: AnswerAssistantMessage
-    legacy_results_eraser: LegacyResultsEraser
+    measurements: MeasurementRepository
     legacy_ocr: Any = None
 
 
@@ -72,7 +74,9 @@ def build_container(
         clock=clock,
     )
     issuer = SessionIssuer(access_tokens, refresh_tokens, clock, timedelta(days=settings.refresh_token_ttl_days))
-    eraser = LegacyResultsEraser(db)
+    measurements = MongoMeasurementRepository(db)
+    # Account deletion erases the new collection and, while it still exists, the legacy one.
+    eraser = EraseAllMeasurements([measurements, LegacyResultsEraser(db)])
     return Container(
         settings=settings,
         db=db,
@@ -93,7 +97,7 @@ def build_container(
         answer_assistant=AnswerAssistantMessage(
             OpenAiLlmClient(http, settings.assistant_provider_api_key, settings.assistant_model)
         ),
-        legacy_results_eraser=eraser,
+        measurements=measurements,
         legacy_ocr=_legacy_ocr(settings),
     )
 
