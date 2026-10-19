@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 from app.api.container import build_container
 from app.api.legacy import auth_legacy, chatbot_legacy, measurements_legacy
-from app.api.v1 import assistant, auth, health, users
+from app.api.v1 import assistant, auth, health, measurements, users
 from app.core.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import RequestIdMiddleware, configure_logging
@@ -56,7 +56,7 @@ def create_app(
     app.add_middleware(RequestIdMiddleware)
     register_error_handlers(app)
 
-    for router in (health.router, auth.router, users.router, assistant.router):
+    for router in (health.router, auth.router, users.router, measurements.router, assistant.router):
         app.include_router(router)
     for legacy_router in (auth_legacy.router, chatbot_legacy.router, measurements_legacy.router):
         app.include_router(legacy_router)

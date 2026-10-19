@@ -14,7 +14,10 @@ from app.application.auth.logout import Logout
 from app.application.auth.refresh_session import RefreshSession
 from app.application.auth.register_user import RegisterUser
 from app.application.auth.tokens import SessionIssuer
+from app.application.measurements.create_measurement import CreateMeasurement
+from app.application.measurements.delete_measurement import DeleteMeasurement
 from app.application.measurements.erase_measurements import EraseAllMeasurements
+from app.application.measurements.list_measurements import ListMeasurements
 from app.core.config import Settings
 from app.core.rate_limit import RateLimiter
 from app.domain.clock import SystemClock
@@ -55,6 +58,9 @@ class Container:
     delete_account: DeleteAccount
     answer_assistant: AnswerAssistantMessage
     measurements: MeasurementRepository
+    create_measurement: CreateMeasurement
+    list_measurements: ListMeasurements
+    delete_measurement: DeleteMeasurement
     legacy_ocr: Any = None
 
 
@@ -98,6 +104,9 @@ def build_container(
             OpenAiLlmClient(http, settings.assistant_provider_api_key, settings.assistant_model)
         ),
         measurements=measurements,
+        create_measurement=CreateMeasurement(measurements, clock),
+        list_measurements=ListMeasurements(measurements),
+        delete_measurement=DeleteMeasurement(measurements),
         legacy_ocr=_legacy_ocr(settings),
     )
 
