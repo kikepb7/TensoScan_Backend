@@ -41,9 +41,13 @@
     `tensoscan-ml synth --gallery docs/synth-samples.png`.
 
 ## Fase 3 — Datos reales
-- [ ] **T-B003-06 · Ingesta (`naming`, `ingest`, `split`) + documento del protocolo**
+- [x] **T-B003-06 · Ingesta (`naming`, `ingest`, `split`) + documento del protocolo**
   - Tests con vídeos sintéticos generados en el propio test.
   - Req.: REQ-B003-09…12 · DoD: CA-B003-04.
+  - Nota de implementación: admite vídeos y fotos con `labels.csv` (columnas `roi_x,roi_y,roi_w,roi_h` opcionales
+    para `--roi-mode manual`). El pHash es propio (DCT, 64 bits) para no depender de `imagehash`/SciPy. El recorte
+    `center` sigue `RoiGeometry` de la app (alto = mín(1,25·ancho, 0,60·H)), por lo que solo es 4:5 con imágenes
+    verticales. Protocolo en `ml/docs/capture-protocol.md`.
 - [ ] 🧑 **T-B003-06b · Aportar datos reales (etapa 2)**
   - Hoy: fotos de 1 tensiómetro con varios valores (`labels.csv`). Para `production`: ≥ 3 dispositivos.
   - Bloquea T-B003-09 (*fine-tuning*) y la evaluación de aceptación, no el resto del código.

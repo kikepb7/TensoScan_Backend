@@ -1,0 +1,16 @@
+# Ingestion of real captures (spec B-003, REQ-B003-10). Command-line flags override these values.
+dataset_version: ds-real-0.1.0
+fps: 3.0 # frames per second extracted from each video
+blur_threshold: 60.0 # variance of the Laplacian of the ROI below which a frame is dropped
+hash_distance: 4 # perceptual-hash Hamming distance at or below which two frames of a video are duplicates
+roi_mode: center # center (the app's guide rectangle) | none (already framed) | manual (roi_* columns of labels.csv)
+max_side: 640 # longest side of the stored crop, in pixels
+jpeg_quality: 95
+drop_blurry_photos: false # photos are deliberate: by default a blurry one is kept and flagged in the report
+dedupe_photos: false # by default individual photos are only de-duplicated when byte-identical
+preview_limit: 48 # files shown in the --preview contact sheet
+
+split:
+  seed: 42
+  ratios: [0.70, 0.15, 0.15] # train, val, test (by group, never by frame)
+  holdout_fraction: 0.20 # share of devices held out for test when there are at least 3 devices
