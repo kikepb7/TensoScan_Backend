@@ -1,0 +1,80 @@
+name: ML CI
+
+# Spec B-003 (REQ-B003-22). Separate from backend-ci.yml: `ml/` is an independent package (C-ML-01) and the web
+# service never imports it. Real training is NOT run here; only the unit tests of the tooling.
+
+on:
+  push:
+    branches: [master, recognition-refactor-feature, ml-tooling]
+    paths:
+      - "ml/**"
+      - "specs/contracts/**"
+      - ".github/workflows/ml-ci.yml"
+  pull_request:
+    paths:
+      - "ml/**"
+      - "specs/contracts/**"
+      - ".github/workflows/ml-ci.yml"
+
+concurrency:
+  group: ml-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: ml
+
+jobs:
+  # Fast job: light core only (numpy, OpenCV, PyYAML). Parser, validator, synthetic geometry and labels, ingestion
+  # with synthetic media, evaluation harness and decoder.
+  ml-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: ml/uv.lock
+          python-version: "3.12"
+
+      - name: Install the light core
+        run: uv sync --frozen --group dev
+
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+
+      - name: Licence audit (fails on GPL/AGPL)
+        run: uv run tensoscan-ml audit-licenses --quiet
+
+      - name: Fast tests
+        run: uv run pytest -m "not torch and not export and not runtime"
+
+  # Heavy job: PyTorch, ONNX, onnx2tf, TensorFlow and LiteRT. Model, training smoke test, export and verify.
+  ml-tests-heavy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: ml/uv.lock
+          python-version: "3.12"
+
+      - name: Install every extra
+        run: uv sync --frozen --group dev --extra train --extra export --extra runtime
+
+      - name: Types
+        run: uv run mypy
+
+      - name: Licence audit with every extra installed
+        run: uv run tensoscan-ml audit-licenses --quiet
+
+      - name: All tests (CPU)
+        run: uv run pytest

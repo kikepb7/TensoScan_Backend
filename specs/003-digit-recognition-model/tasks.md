@@ -4,10 +4,13 @@
 > Las tareas marcadas con 🧑 necesitan una acción del usuario (datos, GPU o decisión).
 
 ## Fase 1 — Base y reglas
-- [ ] **T-B003-01 · Andamiaje de `ml/`**
+- [x] **T-B003-01 · Andamiaje de `ml/`**
   - `pyproject` propio, CLI vacía con subcomandos, configs, ruff, mypy, pytest y job de CI
     `ml-tests`.
   - Req.: REQ-B003-01…03, 22.
+  - Nota de implementación: la CLI es `argparse` (sin dependencias); cada subcomando vive en `tensoscan_ml/commands/`.
+    El CI tiene dos jobs: `ml-tests` (núcleo ligero, lint, auditoría de licencias y tests rápidos) y `ml-tests-heavy`
+    (todos los extras, mypy y todos los tests en CPU). `release` queda como esqueleto (T-B003-13).
 - [ ] **T-B003-02 · `tensoscan_ml.reading`: parser y validador oficiales**
   - Tests con **todos** los casos dorados (leídos de `specs/contracts/`).
   - Req.: REQ-B003-04 · DoD: CA-B003-03.

@@ -1,0 +1,31 @@
+# Real data, checkpoints and exports never go to git (C-ML-03, REQ-B003-11). Only manifests do.
+/data/
+runs/
+checkpoints/
+exports/
+dist/
+out/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npy
+*.npz
+saved_model/
+*_saved_model/
+*.tflite
+*.mp4
+*.mov
+*.avi
+*.mkv
+# ...except the tiny dummy model fixture the Android app copies (spec T-B003-10b).
+!fixtures/dummy/*.tflite
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+*.egg-info/
+
+# The repository-wide `data/` rule must not swallow the `tensoscan_ml.data` package.
+!tensoscan_ml/data/
