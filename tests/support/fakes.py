@@ -5,7 +5,10 @@ from datetime import UTC, datetime, timedelta
 from itertools import count
 
 from app.domain.auth import PasswordCheck, RefreshTokenRecord
-from app.domain.errors import EmailAlreadyRegistered
+from app.domain.errors import ClientIdConflict, EmailAlreadyRegistered
+from app.domain.measurements.canonical import payload_hash
+from app.domain.measurements.cursor import PageCursor
+from app.domain.measurements.model import Measurement, MeasurementPage
 from app.domain.user import NewUser, User
 
 
@@ -104,3 +107,58 @@ class RecordingMeasurementEraser:
     async def delete_all_for_user(self, user_id: str) -> int:
         self.erased.append(user_id)
         return 0
+
+
+class InMemoryMeasurementRepository:
+    """Behaves like ``MongoMeasurementRepository`` (idempotency, ordering, keyset paging, owner scoping)."""
+
+    def __init__(self) -> None:
+        self.items: list[Measurement] = []
+        self._ids = count(1)
+
+    async def add_idempotent(self, measurement: Measurement, *, created_at: datetime) -> tuple[Measurement, bool]:
+        for existing in self.items:
+            if existing.user_id == measurement.user_id and existing.client_id == measurement.client_id:
+                if payload_hash(existing) == payload_hash(measurement):
+                    return existing, False
+                raise ClientIdConflict
+        stored = replace(measurement, id=f"{next(self._ids):024x}", created_at=created_at)
+        self.items.append(stored)
+        return stored, True
+
+    def _matching(self, user_id: str, since: datetime | None, until: datetime | None) -> list[Measurement]:
+        found = [
+            m
+            for m in self.items
+            if m.user_id == user_id
+            and (since is None or m.measured_at >= since)
+            and (until is None or m.measured_at <= until)
+        ]
+        return sorted(found, key=lambda m: (m.measured_at, m.id or ""), reverse=True)
+
+    async def list_page(
+        self,
+        user_id: str,
+        *,
+        since: datetime | None,
+        until: datetime | None,
+        limit: int,
+        after: PageCursor | None,
+    ) -> MeasurementPage:
+        found = self._matching(user_id, since, until)
+        if after is not None:
+            found = [m for m in found if (m.measured_at, m.id or "") < (after.measured_at, after.id)]
+        return MeasurementPage(found[:limit], has_more=len(found) > limit)
+
+    async def list_all(self, user_id: str, *, since: datetime | None, until: datetime | None) -> list[Measurement]:
+        return self._matching(user_id, since, until)
+
+    async def delete(self, user_id: str, measurement_id: str) -> bool:
+        before = len(self.items)
+        self.items = [m for m in self.items if not (m.user_id == user_id and m.id == measurement_id)]
+        return len(self.items) < before
+
+    async def delete_all_for_user(self, user_id: str) -> int:
+        before = len(self.items)
+        self.items = [m for m in self.items if m.user_id != user_id]
+        return before - len(self.items)

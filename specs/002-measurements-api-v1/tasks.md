@@ -10,7 +10,7 @@
   - Inserción idempotente (ADR-B002-01), listado con cursor y borrado con propietario.
   - Incluye `delete_all_for_user` (lo usa T-B001-14).
   - Req.: REQ-B002-02…04, 06, 07 · Hallazgos: AUD-B-16, 17.
-- [ ] **T-B002-03 · Casos de uso `CreateMeasurement`, `ListMeasurements` y `DeleteMeasurement`**
+- [x] **T-B002-03 · Casos de uso `CreateMeasurement`, `ListMeasurements` y `DeleteMeasurement`**
   - Req.: REQ-B002-01…07.
 - [ ] **T-B002-04 · Router `/v1/measurements` + schemas + tests de integración y de contrato**
   - Hallazgos: AUD-B-11, 18 · DoD: CA-B002-01…07.

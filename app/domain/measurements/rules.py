@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from typing import ClassVar
 
 from app.domain.errors import FieldIssue
-from app.domain.measurements.model import MeasurementSource, RecognitionInfo
+from app.domain.measurements.model import MeasurementSource, Reading, RecognitionInfo
 
 REQUIRED = "REQUIRED"
 OUT_OF_RANGE = "OUT_OF_RANGE"
@@ -22,6 +22,7 @@ MAX_MODEL_VERSION_LENGTH = 64
 class ReadingEvaluation:
     errors: list[FieldIssue]
     warnings: list[str]
+    reading: Reading | None = None  # set only when there are no errors
 
 
 class ReadingRules:
@@ -49,7 +50,7 @@ class ReadingRules:
             errors.append(FieldIssue("systolic", SYSTOLIC_NOT_GREATER_THAN_DIASTOLIC))
         if errors or systolic is None or diastolic is None or pulse is None:
             return ReadingEvaluation(errors, [])
-        return ReadingEvaluation(errors, cls._warnings(systolic, diastolic, pulse))
+        return ReadingEvaluation(errors, cls._warnings(systolic, diastolic, pulse), Reading(systolic, diastolic, pulse))
 
     @staticmethod
     def _warnings(systolic: int, diastolic: int, pulse: int) -> list[str]:
