@@ -26,7 +26,7 @@ parte de una spec aprobada y su commit referencia la tarea (`T-B00x-yy`) y los r
 |----|------|------|-----------|--------|
 | 000 | [Auditoría del estado actual](000-baseline-audit/audit.md) | Análisis | — | ✅ Redactada |
 | 001 | [Fundación de plataforma](001-platform-foundation/requirements.md) | Refactor | 000 | 👀 En revisión |
-| 002 | [API de mediciones v1](002-measurements-api-v1/requirements.md) | Feature + migración | 001 | 👀 En revisión |
+| 002 | [API de mediciones v1](002-measurements-api-v1/requirements.md) | Feature + migración | 001 | 🚧 En implementación |
 | 003 | [Modelo de detección de dígitos](003-digit-recognition-model/requirements.md) | ML | — (en paralelo) | 👀 En revisión |
 
 Contratos compartidos con la app (**fuente canónica aquí**):

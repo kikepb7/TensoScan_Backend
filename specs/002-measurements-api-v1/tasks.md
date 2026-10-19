@@ -22,9 +22,12 @@
   - Req.: REQ-B002-11 · DoD: CA-B002-09.
 - [x] **T-B002-07 · Rutas legacy de mediciones sobre la nueva colección + log de uso**
   - Req.: REQ-B002-12, 14 · DoD: CA-B002-10.
-- [ ] **T-B002-08 · Copiar a la app el contrato `api-v1.md` (versión final) y avisar a A-002 fase D**
+- [x] **T-B002-08 · Copiar a la app el contrato `api-v1.md` (versión final) y avisar a A-002 fase D**
   - Incluye ejemplos de petición y respuesta reales generados por los tests (fixtures JSON en
     `specs/contracts/examples/`).
+  - Hecho en el backend: contrato `api-v1.md` 1.2.0 y `examples/` (los comprueba
+    `tests/contract/test_api_examples.py`). **La copia a `TensoScan_App/specs/contracts/` y el aviso
+    a A-002 fase D los hace el responsable** (la implementación no toca el repositorio de la app).
 - [ ] **T-B002-09 · (Diferida, REQ-B002-13) Retirar el OCR legacy, TensorFlow y las rutas `/ocr/*`**
   - Hallazgos: AUD-B-01…08, 10 (cierre).
 

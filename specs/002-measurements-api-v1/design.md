@@ -1,6 +1,6 @@
 # B-002 — API de mediciones v1 · Diseño
 
-> Estado: 📝 Pendiente de aprobación · Requisitos: [requirements.md](requirements.md)
+> Estado: 🚧 En implementación (T-B002-01…08 hechas; T-B002-09 diferida) · Requisitos: [requirements.md](requirements.md)
 
 ## 1. Componentes
 
@@ -159,3 +159,25 @@ PR dedicado (T-B002-09):
 | Migración | Colección legacy sembrada con valores válidos, `"12O"`, `""` y `"300"` → informe correcto; segunda ejecución sin duplicados |
 | Legacy | Las rutas antiguas devuelven el formato antiguo y ven los datos v1 |
 | Contrato | Paths, códigos y forma de los JSON frente a `api-v1.md` §3 |
+
+## 10. Desviaciones de la implementación respecto a este diseño
+
+Decisiones tomadas al implementar T-B002-01…08. Ninguna cambia el comportamiento exigido por los
+requisitos; las que afectan al contrato están en `api-v1.md` 1.2.0.
+
+| # | Diseño original | Implementado | Motivo |
+|---|-----------------|--------------|--------|
+| 1 | `Reading` se valida en el constructor con `ReadingRules` | `Reading` es un valor sin validación; `ReadingRules` se aplica en `CreateMeasurement` | La excepción documentada de `/ocr/display-recognize` (§5) debe poder construir una lectura sin validar rangos. Los valores ausentes (`None`) tampoco caben en un `Reading` |
+| 2 | Cuatro casos de uso | Además: `ListAllMeasurements` (rutas legacy sin paginar), `RecordLegacyRecognition` (la excepción de §5, en un caso de uso aparte para que `CreateMeasurement` no tenga atajos) y `EraseAllMeasurements` (borra `measurements` y `recognition_results` al eliminar la cuenta) | Separación de responsabilidades |
+| 3 | `measured_at` y `created_at` tal cual | Se truncan a segundos | Que el `201` y la repetición `200` devuelvan exactamente lo mismo (Mongo guarda milisegundos) y coherencia con el payload canónico |
+| 4 | Códigos de error solo de `reading-rules.md` | Nuevos: `NOT_ALLOWED`, `TOO_LONG` (coherencia de `recognition`), `INVALID` (campo `cursor`) e `INVALID_TIMEZONE` (campo `tz`) | REQ-B002-01 exige validar `source`/`recognition`; había que darles un código |
+| 5 | Cursor `base64url(measured_at\|id)` (REQ-B002-06) | `base64url(json({"m","i"}))` como en §4 de este diseño | El diseño es más específico; el cursor es opaco para el cliente |
+| 6 | Plantilla con *autoescape* para el HTML legacy | Tabla mínima construida con `html.escape` en `api/legacy/measurements_html.py` (sin JS ni CDN) | No hace falta una librería de plantillas para una tabla |
+| 7 | El PDF legacy no se menciona | Reutiliza `GenerateMeasurementsReport` (ReportLab) con la zona por defecto | Evita mantener dos generadores |
+| 8 | `GET /ocr/measurements` sin orden definido | Más antigua primero (el orden natural de la versión anterior) | Compatibilidad con la app antigua |
+| 9 | Registro de uso legacy | Dependencia `record_legacy_usage` (ruta con plantilla y `user_id`) en las rutas legacy autenticadas, y `record_anonymous_legacy_usage` (solo ruta) en `/register` y `/login` | REQ-B002-14 |
+| 10 | Migración: `confidence` sin detallar | `confidence` se recorta a `[0, 1]` y vale `1.0` si falta; los informes solo se guardan en `migration_reports` en ejecuciones reales (no en `--dry-run`) | Los datos legacy no tienen esquema; un dry-run no debe escribir |
+| 11 | `client_id` de lo migrado | `uuid5` (versión 5); `POST` exige UUID v4 | La app reconcilia por `client_id` leyendo el listado; nadie envía un `client_id` migrado |
+| 12 | CA-B002-07 habla de «GET por id» | No existe `GET /v1/measurements/{id}` en el contrato; se prueba que el listado no muestra datos ajenos y que `DELETE` ajeno es 404 | C-API-01: no se implementa fuera del contrato |
+| 13 | — | Dependencia `tzdata` y validación de `TENSOSCAN_DEFAULT_REPORT_TZ` al arrancar | Las imágenes *slim* no traen zoneinfo del sistema; una errata no debe romper todos los informes |
+| 14 | — | El PDF imprime el texto con fuentes estándar de PDF (Helvetica, WinAnsi): los caracteres fuera de Latin-1/WinAnsi (p. ej. CJK) en el nombre del usuario no se dibujan correctamente | Límite conocido de ReportLab sin fuentes incrustadas; no es un riesgo de seguridad (el texto se escapa) |

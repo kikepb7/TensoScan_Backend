@@ -1,0 +1,20 @@
+{
+  "description": "Every 4xx/5xx has the same envelope {error: {code, message, details}}. Here: a measurement that does not exist (or belongs to someone else).",
+  "request": {
+    "method": "DELETE",
+    "path": "/v1/measurements/6713a1b2c3d4e5f600000099",
+    "headers": {
+      "Authorization": "Bearer <access_token>"
+    }
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "Measurement not found",
+        "details": []
+      }
+    }
+  }
+}

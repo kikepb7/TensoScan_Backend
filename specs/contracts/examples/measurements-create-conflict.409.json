@@ -1,0 +1,36 @@
+{
+  "description": "Same client_id but a different pulse: 409 CLIENT_ID_CONFLICT.",
+  "request": {
+    "method": "POST",
+    "path": "/v1/measurements",
+    "headers": {
+      "Authorization": "Bearer <access_token>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "client_id": "5b0b6f0e-6a1f-4d8e-9d0a-2f1c3b7e9a10",
+      "systolic": 128,
+      "diastolic": 82,
+      "pulse": 68,
+      "measured_at": "2026-10-19T06:15:00Z",
+      "source": "camera",
+      "recognition": {
+        "confidence": 0.93,
+        "model_version": "digits-1.0.0",
+        "edited_fields": [
+          "pulse"
+        ]
+      }
+    }
+  },
+  "response": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "CLIENT_ID_CONFLICT",
+        "message": "A different measurement already uses this client_id",
+        "details": []
+      }
+    }
+  }
+}

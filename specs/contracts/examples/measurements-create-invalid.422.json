@@ -1,0 +1,45 @@
+{
+  "description": "A reading that breaks reading-rules.md: 422 MEASUREMENT_INVALID with one detail per failure.",
+  "request": {
+    "method": "POST",
+    "path": "/v1/measurements",
+    "headers": {
+      "Authorization": "Bearer <access_token>",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "client_id": "0b9a4f5e-3c1d-4b7a-8e2f-6d5c4b3a2f10",
+      "systolic": 80,
+      "diastolic": 82,
+      "pulse": null,
+      "measured_at": "2026-10-19T06:15:00Z",
+      "source": "camera",
+      "recognition": {
+        "confidence": 0.93,
+        "model_version": "digits-1.0.0",
+        "edited_fields": [
+          "pulse"
+        ]
+      }
+    }
+  },
+  "response": {
+    "status": 422,
+    "body": {
+      "error": {
+        "code": "MEASUREMENT_INVALID",
+        "message": "The measurement is not valid",
+        "details": [
+          {
+            "field": "pulse",
+            "code": "REQUIRED"
+          },
+          {
+            "field": "systolic",
+            "code": "SYSTOLIC_NOT_GREATER_THAN_DIASTOLIC"
+          }
+        ]
+      }
+    }
+  }
+}

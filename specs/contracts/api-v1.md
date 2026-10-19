@@ -5,7 +5,7 @@
 > **primero aquí**, sube la versión del documento y se replica en la app dentro del mismo PR o en
 > uno enlazado.
 >
-> Versión del contrato: **1.1.0** · Estado: 📝 Pendiente de aprobación
+> Versión del contrato: **1.2.0** · Estado: 📝 Pendiente de aprobación
 
 ## 1. Convenciones generales
 
@@ -49,7 +49,11 @@
 | 503 | `UPSTREAM_UNAVAILABLE` | Proveedor externo caído (chatbot) |
 
 Los códigos de `details[].code` de medición son los definidos en `reading-rules.md` §3
-(`REQUIRED`, `OUT_OF_RANGE`, `SYSTOLIC_NOT_GREATER_THAN_DIASTOLIC`, `IN_FUTURE`...).
+(`REQUIRED`, `OUT_OF_RANGE`, `SYSTOLIC_NOT_GREATER_THAN_DIASTOLIC`, `IN_FUTURE`...) más los de
+coherencia de `recognition` de la sección 3.2.
+
+Ejemplos reales de petición y respuesta (generados por los tests del backend y comprobados en
+cada ejecución del CI): [`examples/`](examples/).
 
 ## 2. Autenticación
 
@@ -133,7 +137,7 @@ username=ana@example.com&password=********
 | `systolic` | int | `reading-rules.md` §2 |
 | `diastolic` | int | `reading-rules.md` §2 |
 | `pulse` | int | `reading-rules.md` §2 |
-| `measured_at` | datetime con zona | No puede estar a más de 5 minutos en el futuro respecto al reloj del servidor ni ser anterior a `2000-01-01` |
+| `measured_at` | datetime con zona | No puede estar a más de 5 minutos en el futuro respecto al reloj del servidor ni ser anterior a `2000-01-01`. Se guarda en UTC con precisión de segundos (se descartan las fracciones) |
 | `source` | enum | `camera` (propuesto por reconocimiento) · `manual` (introducido a mano) |
 | `recognition` | objeto \| null | Obligatorio si `source=camera` y prohibido si `source=manual` |
 | `recognition.confidence` | float | `[0, 1]` |
@@ -145,25 +149,61 @@ username=ana@example.com&password=********
 - Cuerpo: el recurso sin `id` ni `created_at`.
 - `201 Created` y el recurso, si es nuevo.
 - `200 OK` y el recurso existente, si ya existe `(user, client_id)` con **el mismo** payload
-  (reintento idempotente).
+  (reintento idempotente). El payload se compara en forma canónica: el mismo instante en otro
+  desfase horario, las fracciones de segundo, el orden de `edited_fields` y la `confidence`
+  redondeada a 4 decimales no cuentan como diferencias.
 - `409 CLIENT_ID_CONFLICT` si existe con un payload distinto.
-- `422 MEASUREMENT_INVALID` con `details`.
+- `422 MEASUREMENT_INVALID` con `details` si falla `reading-rules.md` §3.1 o la coherencia de
+  `source` y `recognition` (sección 3.2). Un valor ausente o `null` en `systolic`, `diastolic` o
+  `pulse` se informa como `REQUIRED`.
+- `422 VALIDATION_ERROR` si el cuerpo no tiene la forma esperada (`client_id` que no es UUID v4,
+  `measured_at` sin zona horaria, valores no enteros, `source` desconocido...). `details[].field` es
+  la ruta del campo y `details[].code` el tipo de error de validación.
+- Ejemplos: `examples/measurements-create.201.json`, `measurements-create-replay.200.json`,
+  `measurements-create-conflict.409.json` y `measurements-create-invalid.422.json`.
+
+### 3.2 Códigos de `details[].code` de una medición
+
+Además de los de `reading-rules.md` §3.1 (`REQUIRED`, `OUT_OF_RANGE`,
+`SYSTOLIC_NOT_GREATER_THAN_DIASTOLIC`, `IN_FUTURE`, `TOO_OLD`):
+
+| `field` | `code` | Cuándo |
+|---------|--------|--------|
+| `recognition` | `REQUIRED` | `source=camera` sin `recognition` |
+| `recognition` | `NOT_ALLOWED` | `source=manual` con `recognition` |
+| `recognition.confidence` | `OUT_OF_RANGE` | Fuera de `[0, 1]` |
+| `recognition.model_version` | `REQUIRED` | Cadena vacía |
+| `recognition.model_version` | `TOO_LONG` | Más de 64 caracteres |
+
+Los avisos de `reading-rules.md` §3.2 **nunca** bloquean la creación.
 
 ### `GET /v1/measurements`
-- Query: `from` y `to` (datetime, opcionales, filtran por `measured_at`), `limit` (1–200, por
-  defecto 50) y `cursor`.
+- Query: `from` y `to` (datetime, opcionales, ambos inclusivos, filtran por `measured_at`; sin zona
+  se interpretan como UTC), `limit` (1–200, por defecto 50) y `cursor`.
 - Orden: `measured_at` descendente y, en caso de empate, `id` descendente.
-- `200 { "items": [Measurement], "next_cursor": "..." | null }`.
+- `200 { "items": [Measurement], "next_cursor": "..." | null }`. `next_cursor` es opaco: se pasa tal
+  cual en la siguiente petición y es `null` en la última página.
+- `422 VALIDATION_ERROR` con `{ "field": "cursor", "code": "INVALID" }` si el cursor no lo emitió
+  esta API, y `422 VALIDATION_ERROR` si `limit` o las fechas están fuera de rango o mal formadas.
+- Ejemplo: `examples/measurements-list-page.200.json`.
 
 ### `DELETE /v1/measurements/{id}`
-- `204`; `404 NOT_FOUND` si no existe **o** es de otro usuario (no se revela su existencia).
+- `204`; `404 NOT_FOUND` si no existe, es de otro usuario o el `id` está mal formado (no se revela
+  su existencia). Ejemplo del sobre de error: `examples/error-envelope.404.json`.
 
 ### `GET /v1/measurements/report?format=pdf`
-- Query: `from`, `to` (opcionales) y `tz` (zona IANA para formatear las fechas, por ejemplo
-  `Europe/Madrid`; por defecto, la zona configurada en el servidor `TENSOSCAN_DEFAULT_REPORT_TZ`, que vale
+- Query: `format` (opcional; el único valor admitido es `pdf`), `from`, `to` (opcionales, como en
+  el listado) y `tz` (zona IANA para formatear las fechas, por ejemplo `Europe/Madrid`; por
+  defecto, la zona configurada en el servidor `TENSOSCAN_DEFAULT_REPORT_TZ`, que vale
   `Europe/Madrid`).
-- `200 application/pdf` con `Content-Disposition: attachment; filename="tensoscan-report-YYYYMMDD.pdf"`.
+- `200 application/pdf` con `Content-Disposition: attachment; filename="tensoscan-report-YYYYMMDD.pdf"`
+  (`YYYYMMDD` es la fecha de generación en la zona `tz`). El PDF, en español, lleva cabecera
+  (paciente, periodo y fecha de generación), resumen (número de lecturas y media, mínimo y máximo
+  de SYS, DIA y PUL), gráfico de evolución, tabla con las fechas y horas locales y, en cada página,
+  un pie que avisa de que el informe es orientativo y no un diagnóstico.
 - `404 NOT_FOUND` si no hay mediciones en el rango.
+- `422 VALIDATION_ERROR` con `{ "field": "tz", "code": "INVALID_TIMEZONE" }` si `tz` no es una
+  zona IANA, y `422 VALIDATION_ERROR` sobre `format` para cualquier valor distinto de `pdf`.
 - Nota: el formato `html` se **elimina** de v1. La app pinta su propio gráfico nativo (ver
   ADR-B002-04).
 
@@ -208,3 +248,4 @@ nueva ven los mismos datos.
 |---------|-------|--------|
 | 1.0.0 | 2026-10-19 | Versión inicial |
 | 1.1.0 | 2026-10-19 | Añade `DELETE /v1/users/me`; la zona horaria por defecto del informe pasa a ser `Europe/Madrid` |
+| 1.2.0 | 2026-10-19 | Precisa las mediciones al implementar B-002: códigos de coherencia de `recognition` (§3.2), comparación canónica en la idempotencia, `measured_at` con precisión de segundos, cursor inválido y `tz` inválida (422), `format` opcional (solo `pdf`), `404` para ids mal formados, contenido del PDF y ejemplos reales en `examples/`. No cambia ningún endpoint ni campo existente |

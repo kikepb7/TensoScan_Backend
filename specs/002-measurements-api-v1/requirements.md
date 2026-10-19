@@ -1,6 +1,6 @@
 # B-002 — API de mediciones v1 · Requisitos
 
-> Estado: 📝 Pendiente de aprobación · Tipo: Feature + migración de datos
+> Estado: 🚧 En implementación · Tipo: Feature + migración de datos
 > Depende de: B-001 · Contratos: `api-v1.md` §3 y §6, `reading-rules.md`
 > Resuelve: AUD-B-01…08 (retirada), 10, 11, 15…18, 21…23 · Habilita: App A-002 fase D y A-003
 
