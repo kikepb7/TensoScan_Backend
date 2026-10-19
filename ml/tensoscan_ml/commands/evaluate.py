@@ -4,14 +4,10 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from tensoscan_ml.commands import add_common_arguments
 from tensoscan_ml.console import echo, fail
 from tensoscan_ml.provenance import write_run_record
-
-if TYPE_CHECKING:
-    from tensoscan_ml.detector.runtime import Detector, JsonlDetections
 
 HELP = "Evaluate a checkpoint, a .tflite or a detections.jsonl against a manifest (official parser, mAP, reports)"
 
@@ -31,26 +27,11 @@ def configure(parser: argparse.ArgumentParser) -> None:
 
 
 def run(args: argparse.Namespace) -> int:
-    from tensoscan_ml.detector.runtime import JsonlDetections, tflite_detector
+    from tensoscan_ml.detector.factory import detector_from_args
     from tensoscan_ml.eval.runner import evaluate_manifest
 
     manifest = Path(args.manifest)
-    source: Detector | JsonlDetections
-    if args.detector.endswith(".jsonl"):
-        source = JsonlDetections(args.detector)
-    elif args.detector == "tflite":
-        if not args.model:
-            raise ValueError("--detector tflite needs --model path/to/digits.tflite")
-        source = tflite_detector(args.model, args.threads)
-    elif args.detector == "checkpoint":
-        if not args.model:
-            raise ValueError("--detector checkpoint needs --model path/to/best.pt")
-        from tensoscan_ml.model.runtime import checkpoint_detector
-
-        source = checkpoint_detector(args.model)
-    else:
-        raise ValueError("--detector must be checkpoint, tflite or a path to a .jsonl file")
-
+    source = detector_from_args(args.detector, args.model, args.threads)
     out_dir = Path(args.out) if args.out else manifest.parent / "eval" / source.name.replace(":", "_")
     report = evaluate_manifest(manifest, source, out_dir, limit=args.limit)
     write_run_record(

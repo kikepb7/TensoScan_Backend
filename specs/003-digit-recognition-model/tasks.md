@@ -87,10 +87,16 @@
     `.tflite` float16/float32; int8 con el conversor de TF y un dataset representativo. La salida se renombra a
     `input`/`output` y se comprueba que solo hay *builtins*. `onnx2tf` intenta descargar un fichero de muestra de
     GitHub: el pipeline lo crea en el directorio de trabajo para que funcione sin red.
-- [ ] **T-B003-11 · `verify`** (E/S, operaciones *builtin*, clases, tamaño, latencia y set dorado)
+- [x] **T-B003-11 · `verify`** (E/S, operaciones *builtin*, clases, tamaño, latencia y set dorado)
   - Req.: REQ-B003-19 · DoD: CA-B003-05.
-- [ ] **T-B003-12 · `prelabel` + guía de anotación en CVAT** (subconjunto de ~300 frames reales)
+  - Nota de implementación: la latencia es **informativa** en CPU de desarrollo (`--enforce-latency` la convierte en
+    fallo); el informe JSON (`<modelo>.verify.json`) es legible por máquina. El set dorado se pasa con
+    `--golden manifest.jsonl` o `--golden synthetic` (20 fotogramas sintéticos reproducibles con el parser).
+- [x] **T-B003-12 · `prelabel` + guía de anotación en CVAT** (subconjunto de ~300 frames reales)
   - Req.: REQ-B003-13.
+  - Nota de implementación: `prelabel` también tiene `--check`, que compara las cajas corregidas con la lectura
+    conocida mediante el parser oficial para detectar glifos olvidados o con la clase cambiada. Guía en
+    `ml/docs/cvat-annotation-guide.md`.
 
 ## Fase 5 — Release
 - [ ] **T-B003-13 · `release` v1.0.0**
