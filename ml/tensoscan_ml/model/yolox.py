@@ -30,10 +30,13 @@ class DetectionHead(nn.Module):
         self.cls_pred = nn.Conv2d(hidden, num_classes, 1)
         self.reg_pred = nn.Conv2d(hidden, 4, 1)
         self.obj_pred = nn.Conv2d(hidden, 1, 1)
-        prior = -math.log((1 - 0.01) / 0.01)  # start with 1 % probability: stable early training
+        self.set_score_bias(-math.log((1 - 0.01) / 0.01))  # start with 1 % probability: stable early training
+
+    def set_score_bias(self, bias: float) -> None:
+        """Sets the initial logit of the class and objectness predictions (0.01 probability by default)."""
         for conv in (self.cls_pred, self.obj_pred):
             assert conv.bias is not None  # noqa: S101
-            nn.init.constant_(conv.bias, prior)
+            nn.init.constant_(conv.bias, bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.stem(x)
@@ -82,6 +85,12 @@ class YoloxNano(nn.Module):
         out4 = self.pan4(torch.cat([self.down3(out3), mid4], dim=1))
         out5 = self.pan5(torch.cat([self.down4(out4), top5], dim=1))
         return [head(feature) for head, feature in zip(self.heads, (out3, out4, out5), strict=True)]
+
+    def set_score_bias(self, bias: float) -> None:
+        """Sets the initial class/objectness logit of every head."""
+        for head in self.heads:
+            assert isinstance(head, DetectionHead)  # noqa: S101
+            head.set_score_bias(bias)
 
 
 ArchBuilder = Callable[[dict[str, Any]], nn.Module]

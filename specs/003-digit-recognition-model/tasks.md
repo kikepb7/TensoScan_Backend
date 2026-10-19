@@ -72,13 +72,21 @@
     pérdida SimOTA, EMA, AdamW y coseno; arquitectura enchufable (`ARCHITECTURES`) sin código AGPL. El spike
     (T-B003-08) decide la arquitectura final. La etapa 2 se omite con aviso mientras no haya fotogramas reales con
     cajas (`--require-real` lo convierte en error). Prueba de humo en CPU: `configs/train/smoke.yaml`.
-- [ ] **T-B003-10b · Modelo «dummy» conforme al contrato (pesos aleatorios)**
+- [x] **T-B003-10b · Modelo «dummy» conforme al contrato (pesos aleatorios)**
   - `tensoscan-ml dummy-model` genera un `.tflite` + sidecar con la E/S exacta del contrato, sin valor
     predictivo. Permite completar y testear en la app todo el código de `LiteRtDigitDetector`
     (carga, verificación sha256, preprocesado, decodificación y latencia) **antes** de entrenar.
   - Req.: REQ-B003-18, 19.
-- [ ] **T-B003-10 · Exportación al contrato** (`OutputContractWrapper`, float16 e int8)
+  - Nota de implementación: hay dos modelos (`random`: pesos aleatorios de la arquitectura real; `fixed`: ignora la
+    imagen y devuelve siempre la lectura 128/82/67 con un duplicado y una caja de baja puntuación, para probar de
+    extremo a extremo decodificador y parser). Ambos se generan con el mismo pipeline de exportación (sin grafo TF a
+    mano). Fixtures en `ml/fixtures/dummy/`.
+- [x] **T-B003-10 · Exportación al contrato** (`OutputContractWrapper`, float16 e int8)
   - Req.: REQ-B003-18.
+  - Nota de implementación (ADR-B003-07): `torch.onnx.export` (opset 17, exportador clásico) → `onnx2tf` →
+    `.tflite` float16/float32; int8 con el conversor de TF y un dataset representativo. La salida se renombra a
+    `input`/`output` y se comprueba que solo hay *builtins*. `onnx2tf` intenta descargar un fichero de muestra de
+    GitHub: el pipeline lo crea en el directorio de trabajo para que funcione sin red.
 - [ ] **T-B003-11 · `verify`** (E/S, operaciones *builtin*, clases, tamaño, latencia y set dorado)
   - Req.: REQ-B003-19 · DoD: CA-B003-05.
 - [ ] **T-B003-12 · `prelabel` + guía de anotación en CVAT** (subconjunto de ~300 frames reales)

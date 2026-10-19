@@ -1,0 +1,58 @@
+{
+  "classes": 14,
+  "converter": {
+    "ai-edge-litert": "2.3.0",
+    "onnx": "1.23.2",
+    "onnx2tf": "1.28.8",
+    "tensorflow": "2.21.0",
+    "torch": "2.14.1"
+  },
+  "dummy": true,
+  "input": {
+    "dtype": "FLOAT32",
+    "name": "input",
+    "scale": null,
+    "shape": [
+      1,
+      320,
+      320,
+      3
+    ],
+    "zero_point": null
+  },
+  "kind": "random",
+  "onnx_opset": 17,
+  "operators": [
+    "ADD",
+    "CONCATENATION",
+    "CONV_2D",
+    "DEPTHWISE_CONV_2D",
+    "DEQUANTIZE",
+    "EXP",
+    "LOGISTIC",
+    "MAX_POOL_2D",
+    "MINIMUM",
+    "MUL",
+    "PAD",
+    "RELU",
+    "RESHAPE",
+    "RESIZE_NEAREST_NEIGHBOR",
+    "STRIDED_SLICE",
+    "TRANSPOSE"
+  ],
+  "output": {
+    "dtype": "FLOAT32",
+    "name": "output",
+    "scale": null,
+    "shape": [
+      1,
+      2100,
+      18
+    ],
+    "zero_point": null
+  },
+  "precision": "float16",
+  "reading": null,
+  "seed": 0,
+  "size_bytes": 1469088
+}
