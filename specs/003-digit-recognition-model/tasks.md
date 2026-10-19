@@ -53,10 +53,13 @@
   - Bloquea T-B003-09 (*fine-tuning*) y la evaluación de aceptación, no el resto del código.
 
 ## Fase 4 — Modelo
-- [ ] **T-B003-07 · Harness de evaluación (`eval`)**
+- [x] **T-B003-07 · Harness de evaluación (`eval`)**
   - Fuentes: *checkpoint*, `tflite` y `detections.jsonl`.
   - Tests con detecciones sintéticas perfectas → 100 %.
   - Req.: REQ-B003-16, 17.
+  - Nota de implementación: letterbox y decodificador son portes numéricos del Kotlin (`tensoscan_ml/detector/`).
+    Se decodifica con umbral 0,05 para el mAP y el parser ve la vista de la app (umbral 0,40, máx. 32). La fuente
+    `tflite` se prueba de extremo a extremo en T-B003-10b/11; la fuente `checkpoint` llega con T-B003-09.
 - [ ] 🧑 **T-B003-08 · *Spike* de arquitectura (ADR-B003-02)**
   - Entrenar las 2 candidatas con el mismo presupuesto sobre sintético. Exportar y `verify`.
     Registrar el resultado y la decisión en el ADR.
